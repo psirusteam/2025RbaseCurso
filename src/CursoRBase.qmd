@@ -57,35 +57,38 @@ read_csv(), etc.
 
 # Carga e importación de base de datos
 
-Antes de analizar, debemos importar o leer los datos y traerlos a R. Esto significa que R toma la información que está guardada en un archivo externo (como Excel, CSV, RDS, SPSS, etc.) y la convierte en un objeto dentro del entorno de trabajo.
+Antes de analizar, debemos importar o leer los datos y traerlos a R. Esto significa que R
+toma la información que está guardada en un archivo externo (como Excel, CSV, RDS, SPSS,
+etc.) y la convierte en un objeto dentro del entorno de trabajo.
 
-Una vez los datos están cargados en un objeto (por ejemplo, un data frame llamado datos), podemos visualizarlos, limpiarlos, transformarlos, hacer gráficos o aplicar modelos estadísticos. Es decir, importar los datos es el paso que conecta la información real con el análisis que haremos en R.
+Una vez los datos están cargados en un objeto (por ejemplo, un data frame llamado datos),
+podemos visualizarlos, limpiarlos, transformarlos, hacer gráficos o aplicar modelos
+estadísticos. Es decir, importar los datos es el paso que conecta la información real con
+el análisis que haremos en R.
 
 # Carga e importación de base de datos
 
 ## **Formatps más comunes**
 
-| **Tipo de archivo**     | **Librería**        | **Función para importar** | **Ejemplo en R**                                         |
-|--------------------------|----------------------|----------------------------|----------------------------------------------------------|
-| CSV                      | readr     | `read_csv()`               | `datos <- read_csv("data/archivo.csv")`                 |
-| Texto delimitado “;”     | readr                | `read_delim()`             | `datos <- read_delim("data/archivo.txt", delim = ";")`  |
-| Texto delimitado tab     | readr                | `read_tsv()`               | `datos <- read_tsv("data/archivo.tsv")`                 |
-| Excel (.xlsx)     | readxl               | `read_excel()`             | `datos <- read_excel("data/datos.xlsx")`                |
-| RDS (.rds)               | Base de R            | `readRDS()`                | `datos <- readRDS("data/base.rds")`                     |
-| RData (.RData)           | Base de R            | `load()`                   | `load("data/mi_objeto.RData")`                          |
+| **Tipo de archivo** | **Librería** | **Función para importar** | **Ejemplo en R** |
+|-------------------|-------------------|-------------------|----------------------------------|
+| CSV | readr | `read_csv()` | `datos <- read_csv("data/archivo.csv")` |
+| Texto delimitado “;” | readr | `read_delim()` | `datos <- read_delim("data/archivo.txt", delim = ";")` |
+| Texto delimitado tab | readr | `read_tsv()` | `datos <- read_tsv("data/archivo.tsv")` |
+| Excel (.xlsx) | readxl | `read_excel()` | `datos <- read_excel("data/datos.xlsx")` |
+| RDS (.rds) | Base de R | `readRDS()` | `datos <- readRDS("data/base.rds")` |
+| RData (.RData) | Base de R | `load()` | `load("data/mi_objeto.RData")` |
 
 # Carga e importación de base de datos
 
 ## **Otros formatos**
 
-| **Tipo de archivo**     | **Librería**        | **Función para importar** | **Ejemplo en R**                                         |
-|--------------------------|----------------------|----------------------------|----------------------------------------------------------|
-| SPSS (.sav)              | haven                | `read_sav()`               | `datos <- read_sav("data/archivo.sav")`          |
-| Stata (.dta)             | haven                | `read_dta()`               | `datos <- read_dta("data/archivo.dta")`          |
-| JSON                     | jsonlite             | `fromJSON()`               | `datos <- fromJSON("data/archivo.json")`      |
-| CSV grande (.csv.gz)     | data.table           | `fread()`                  | `datos <- fread("data/archivo.csv.gz")`     |
-
-
+| **Tipo de archivo** | **Librería** | **Función para importar** | **Ejemplo en R** |
+|-------------------|-------------------|-------------------|----------------------------------|
+| SPSS (.sav) | haven | `read_sav()` | `datos <- read_sav("data/archivo.sav")` |
+| Stata (.dta) | haven | `read_dta()` | `datos <- read_dta("data/archivo.dta")` |
+| JSON | jsonlite | `fromJSON()` | `datos <- fromJSON("data/archivo.json")` |
+| CSV grande (.csv.gz) | data.table | `fread()` | `datos <- fread("data/archivo.csv.gz")` |
 
 # Carga e importación de base de datos
 
@@ -166,7 +169,7 @@ Conocer los tipos de datos nos permite:
 
 -   Elegir correctamente cómo interpretar la información (número, texto, fecha, categoría,
     etc.).
-    
+
 -   Preparar los datos adecuadamente para modelos estadísticos
 
 # Explorar: conocimientos básicos
@@ -233,22 +236,23 @@ class(x_date)
 
 ## **Clases de objetos**
 
-En R, los datos no se guardan de forma suelta, sino dentro de objetos. Estos objetos pueden tener diferentes estructuras o “clases”, y conocerlas es clave para trabajar correctamente.
+En R, los datos no se guardan de forma suelta, sino dentro de objetos. Estos objetos
+pueden tener diferentes estructuras o “clases”, y conocerlas es clave para trabajar
+correctamente.
 
 # Explorar: conocimientos básicos
 
 ## **Clases de objetos**
 
-| **Tipo de objeto** | **Descripción** 
-|--------------------|------------------|
-| **Vector**         | Conjunto básico de valores del mismo tipo. | 
-| **Factor**         | Vector para datos categóricos con niveles definidos. | 
-| **Matrix**         | Arreglo rectangular de datos numéricos o de un solo tipo. | 
-| **Array**          | Extiende la idea de matriz a más de dos dimensiones. | 
-| **Data Frame**     | Tabla similar a Excel; cada columna puede tener distinto tipo de dato. | 
-| **Tibble**         | Versión moderna del data frame (tidyverse), más ordenada y amigable. | 
-| **List**           | Contenedor que puede almacenar objetos de cualquier tipo y tamaño. |
-
+| **Tipo de objeto** | **Descripción**                                                        |
+|-----------------------------------------------|-------------------------------------------|
+| **Vector**         | Conjunto básico de valores del mismo tipo.                             |
+| **Factor**         | Vector para datos categóricos con niveles definidos.                   |
+| **Matrix**         | Arreglo rectangular de datos numéricos o de un solo tipo.              |
+| **Array**          | Extiende la idea de matriz a más de dos dimensiones.                   |
+| **Data Frame**     | Tabla similar a Excel; cada columna puede tener distinto tipo de dato. |
+| **Tibble**         | Versión moderna del data frame (tidyverse), más ordenada y amigable.   |
+| **List**           | Contenedor que puede almacenar objetos de cualquier tipo y tamaño.     |
 
 # Explorar: conocimientos básicos
 
@@ -338,10 +342,48 @@ R trabaja principalmente a través de funciones, que se escriben con la forma:
 nombre_funcion(argumento = valor)
 ```
 
-Por ejemplo,
+# Explorar: conocimientos básicos
+
+## **Usando funciones en R**
 
 ```{r, echo=TRUE, include=TRUE}
-seq(1, 10)      # crea los números del 1 al 10
+# Secuencias y repetición
+seq(1, 10, by = 2)     # 1, 3, 5, 7, 9
+rep(5, times = 4)      # 5 5 5 5
+rep(c("A","B"), each = 3)  # A A A B B B
+```
+
+
+# Explorar: conocimientos básicos
+
+## **Usando funciones en R**
+
+```{r, echo=TRUE, include=TRUE}
+# Resumen rápido de datos
+tail(datos, 3)          # Últimas 3 filas
+class(datos)            # Clase del objeto (data.frame, vector, etc.)
+names(datos)            # Nombres de columnas
+```
+# Explorar: conocimientos básicos
+
+## **Usando funciones en R**
+
+```{r, echo=TRUE, include=TRUE}
+# Resumen rápido de datos
+
+str(datos)              # Estructura del objeto (tipo de dato, columnas, etc.)
+
+```
+# Explorar: conocimientos básicos
+
+## **Usando funciones en R**
+
+```{r, echo=TRUE, include=TRUE}
+# Estadísticas básicas
+mean(datos$ingreso, na.rm = TRUE)   # Media
+median(datos$ingreso)               # Mediana
+sd(datos$ingreso)                   # Desviación estándar
+var(datos$ingreso)                  # Varianza
 ```
 
 # Explorar: conocimientos básicos
@@ -418,7 +460,7 @@ aquellas observaciones cuyo estado laboral es “1”.
 datos_mayores <- datos2 %>%
   filter(area == "1")
 
-head(datos_mayores,5)
+head(datos_mayores,4)
 ```
 
 # Explorar: Transformación de datos
@@ -441,13 +483,44 @@ head(datos_ord, 5)
 
 Crear variables derivadas consiste en generar nuevas columnas a partir de otras ya
 existentes dentro de la base de datos. Esto es fundamental en el análisis de encuestas
-porque permite construir indicadores.Para ello utilizamos funciones como mutate() y
-case_when() del paquete dplyr, que nos permiten transformar, combinar o recodificar
-variables sin alterar los datos originales.
+porque permite construir indicadores.Para ello utilizamos la funcion mutate() del paquete
+dplyr, que nos permiten transformar, combinar o recodificar variables sin alterar los
+datos originales.
 
 # Explorar: Transformación de datos
 
-## **Crear variables derivadas**
+## **Crear variables con condicionales**
+
+Para crear nuevas variables a partir de reglas lógicas, R permite usar estructuras
+condicionales como ifelse o case_when, que evalúan una condición y ejecutan
+acciones dependiendo de si es verdadera o falsa.
+
+¿Cuándo usar cada una?
+
+-   ifelse() → clasificar rápidamente toda una columna con 2 opciones
+
+-   case_when() → múltiples categorías o reglas, más ordenado y fácil de leer
+
+# Explorar: Transformación de datos
+
+## **Crear variables con condicionales**
+
+```{r, echo=TRUE,include=TRUE}
+# Crear variable: ¿ingreso alto o no?
+datos2$ingreso_alto <- ifelse(datos2$ingreso > 1000,
+                              "Alto",
+                              "No alto")
+
+# Si tiene más de 12 años de estudio = educación superior
+datos2$educ_superior <- ifelse(datos2$anoest > 12,
+                               "Sí",
+                               "No")
+
+```
+
+# Explorar: Transformación de datos
+
+## **Crear variables con condicionales**
 
 ```{r, echo=TRUE,include=TRUE}
 # Crear grupos de edad (niñez, juventud, adultez, vejez)
@@ -464,7 +537,7 @@ datos2 <- datos2 %>%
 
 # Explorar: Transformación de datos
 
-## **Crear variables derivadas**
+## **Crear variables con condicionales**
 
 ```{r, echo=TRUE,include=TRUE}
 # Crear grupos de años de educación
@@ -477,6 +550,11 @@ datos2 <- datos2 %>%
     TRUE ~ NA_character_
   ))
 ```
+
+# Explorar: Transformación de datos
+
+## **Crear variables con condicionales**
+
 # Explorar: Transformación de datos
 
 ## **Resumir por grupos**
@@ -564,6 +642,31 @@ grafico
 
 # Explorar: Visualización de datos
 
+Hasta ahora hemos observado cómo varía el ingreso según los años de estudio. Pero ¿existen
+diferencias en los ingresos entre hombres y mujeres, independientemente del nivel
+educativo?
+
+Para explorar esta pregunta podemos usar un boxplot, que nos permite comparar la
+distribución del ingreso entre ambos grupos. Este gráfico muestra valores como la mediana,
+los cuartiles y posibles valores atípicos.
+
+```{r, echo=TRUE, include=TRUE }
+box_plot<- ggplot(datos2, aes(x = sexo, y = ingreso, fill = sexo)) +
+  geom_boxplot(outlier.alpha = 0.2) +
+  labs(title = "Distribución del ingreso por sexo",
+       x = NULL, y = "Ingreso") +
+  theme_classic() +
+  theme(legend.position = "none")
+```
+
+# Explorar: Visualización de datos
+
+```{r, echo=TRUE, include=TRUE,fig.width=5, fig.height=3 }
+box_plot
+```
+
+# Explorar: Visualización de datos
+
 Otras geoms útiles en ggplot2
 
 -   Líneas: geom_line() – Series temporales o secuencias.
@@ -572,13 +675,29 @@ Otras geoms útiles en ggplot2
 
 -   Barras: geom_col() → altura = valor (y) ya calculado.
 
--   Boxplot: geom_boxplot() – Comparar distribuciones entre categorías.
-
--   Histograma: geom_histogram() – Distribución de una variable numérica.
-
 -   Densidad: geom_density() – Distribución suavizada.
 
 -   Tendencia: geom_smooth() – Curva/recta ajustada.
+
+# Explorar: Visualización de datos
+
+Finalmente, muchas veces nos interesa ver el comportamiento del ingreso total en toda la
+muestra. Para ello, un histograma permite observar la forma de la distribución
+(concentraciones, asimetrías y posibles valores extremos).
+
+```{r, echo=TRUE, include=TRUE }
+histo <- ggplot(datos2, aes(x = ingreso)) +
+geom_histogram(bins = 40) +
+labs(title = "Histograma del ingreso (toda la muestra)",
+x = "Ingreso", y = "Frecuencia") +
+theme_classic()
+```
+
+# Explorar: Visualización de datos
+
+```{r, echo=TRUE, include=TRUE,fig.width=5, fig.height=3 }
+histo
+```
 
 # Programar
 
@@ -609,8 +728,8 @@ siguiente.
 
 ## **Pipes**
 
--   Ejemplo: Si queremos conocer cuál es el ingreso mensual promedio de las personas
-    del área urbana y compararlo entre hombres y mujeres, podemos hacerlo usando un pipe.
+-   Ejemplo: Si queremos conocer cuál es el ingreso mensual promedio de las personas del
+    área urbana y compararlo entre hombres y mujeres, podemos hacerlo usando un pipe.
 
 ```{r,  echo=TRUE, include=TRUE}
 ing_sex <- datos2 %>%
@@ -641,6 +760,37 @@ de crear muchas variables intermedias.
 
 # Programar
 
+## **Pipes**
+
+-   Ejemplo: Calculamos ingreso per cápita por hogar y mostramos los 5 hogares con mayor ingreso per cápita —todo en una sola cadena.
+
+```{r,  echo=TRUE, include=TRUE}
+top5_pc <- datos2 %>%
+   # 1) agrupamos por hogar
+  group_by(id_hogar) %>% 
+  # 2) sumamos ingreso del hogar
+  summarise(ingreso_hogar = sum(ingreso, na.rm = TRUE),
+            # 3) contamos miembros
+            miembros      = n(),                           
+            .groups = "drop") %>%
+  # 4) ingreso per cápita
+  mutate(ingreso_pc = ingreso_hogar / miembros) %>%  
+  # 5) ordenamos
+  arrange(desc(ingreso_pc)) %>%      
+  # 6) top 5
+  slice_head(n = 5)                                        
+```
+    
+# Programar
+
+## **Pipes**
+
+```{r,  echo=TRUE, include=TRUE}
+top5_pc
+```
+    
+# Programar
+
 ## **Iteración**
 
 Iterar es repetir una misma operación sobre un conjunto de elementos (archivos, columnas,
@@ -663,7 +813,7 @@ while,entre otros.
 
 Sirve cuando ya sabemos cuántas veces repetir.
 
-- Ejemplo: Para cada nivel de pobreza, calcular el ingreso promedio.
+-   Ejemplo: Para cada nivel de pobreza, calcular el ingreso promedio.
 
 ```{r,  echo=TRUE, include=TRUE}
 pobre <- unique(datos2$pobreza)
@@ -685,24 +835,26 @@ for (p in pobre) {
 resultado
 ```
 
-Esto hace lo mismo que si calculáramos el promedio para cada nivel de pobreza, pero automáticamente.
+Esto hace lo mismo que si calculáramos el promedio para cada nivel de pobreza, pero
+automáticamente.
 
 # Programar
 
 ## **Iteración - while**
 
-El bucle while sirve para repetir algo mientras se cumpla una condición.
-Es como decir:
+El bucle while sirve para repetir algo mientras se cumpla una condición. Es como decir:
 
 “Sigue haciendo esto mientras algo siga siendo verdadero. Cuando deje de serlo, párate.”
 
-A diferencia de for, no sabemos cuántas veces se va a repetir. Se detiene cuando la condición ya no se cumple.
+A diferencia de for, no sabemos cuántas veces se va a repetir. Se detiene cuando la
+condición ya no se cumple.
 
 # Programar
 
 ## **Iteración - while**
 
-- Ejemplo: Supongamos que queremos encontrar la primera mujer que tenga un ingreso mayor a 15 millones.
+-   Ejemplo: Supongamos que queremos encontrar la primera mujer que tenga un ingreso mayor
+    a 15 millones.
 
 ```{r,  echo=TRUE, include=TRUE}
 i <- 1
@@ -720,11 +872,11 @@ datos2[i, ]
 
 Una función es un bloque de código que:
 
-- Recibe valores de entrada (argumentos).
+-   Recibe valores de entrada (argumentos).
 
-- Ejecuta instrucciones.
+-   Ejecuta instrucciones.
 
-- Devuelve un resultado.
+-   Devuelve un resultado.
 
 Sirve para no repetir código, ahorrar tiempo y mantener el análisis ordenado.
 
@@ -740,7 +892,7 @@ nombre_funcion <- function(argumento1, argumento2) {
 
 ## Crear funciones
 
-- Ejemplo: Función para calcular el ingreso per cápita por hogar.
+-   Ejemplo: Función para calcular el ingreso per cápita por hogar.
 
 ```{r,  echo=TRUE, include=TRUE}
 ingreso_pc_por_hogar <- function(base) {
