@@ -1,0 +1,161 @@
+---
+title: "Introducción al modelado con R"
+subtitle: "Curso Básico R"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: true
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+# output:
+#   beamer_presentation:
+#     theme: "CambridgeUS"
+#     colortheme: "dove"
+#     fonttheme: "professionalfonts"
+#     slide_level: 2
+#     aspectratio: 1610
+#     toc: false
+#     includes:
+#       in_header: header.tex
+# header-includes:
+  # - \usepackage[T1]{fontenc}
+  # - \usepackage{xcolor}
+  # - \definecolor{cepal-blue}{HTML}{0B4C6B}
+  # - \definecolor{cepal-light}{HTML}{1B7AA0}
+  # - \definecolor{cepal-gray}{HTML}{6B6B6B}
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+# Introducción {#intro}
+
+##  El Modelo: Señal y Ruido
+
+El modelado es una herramienta para la Exploración de Datos (EDA).
+
+*Definición Fundamental*
+
+* Un **modelo** es una representación simplificada de la realidad que captura patrones relevantes (señal) y deja fuera la variabilidad irrelevante (ruido).
+
+* Propósitos: **describir**, **resumir** y **predecir**.
+
+
+:::{.callout-tip}
+### George Box:
+"Todos los modelos están equivocados, algunos son útiles.".
+:::
+
+## Definición y propósito
+
+Su propósito es distinguir:
+  
+* Señal ($f(X)$): Los patrones verdaderos generados por el fenómeno de interés.
+      
+      
+* Ruido ($\epsilon$): Las variaciones aleatorias o el error que no nos interesa.
+
+:::{.callout-tip}
+### Ecuación del Modelo:
+
+$$
+Y = f(X) + \epsilon
+$$
+:::
+
+*En este apartado, nos enfocamos en modelos predictivos (que generan $\hat{Y}$).*
+
+
+## El Rol Exploratorio del Modelo
+
+El foco en esta sección es usar modelos para *construir intuición* y encontrar patrones sutiles.
+
+**Función en EDA**
+
+* Se utiliza para extraer primero la Señal conocida, y luego examinar lo que queda, es decir, el Ruido ($\epsilon$) o residuales.
+
+* Si encontramos patrones en los residuales, hemos descubierto una nueva señal que el modelo inicial omitió.
+
+
+
+## La Regla Crítica: Exploración vs. Confirmación
+
+Es fundamental distinguir la fase de búsqueda de patrones de la fase de prueba formal.
+
+**Principio de la Independencia**
+
+* Exploración (Generación de Hipótesis): Puedes usar un dato muchas veces.
+
+* Confirmación (Inferencia Formal): Solo puedes usar una observación **UNA SOLA VEZ**.
+
+:::{.callout-important}
+### Advertencia:
+Si usas los mismos datos para generar y confirmar una hipótesis, serás **demasiado optimista**. 
+:::
+
+## Ejemplo práctico: visualización previa al ajuste
+
+```{r message=FALSE, warning=FALSE ,out.height= 200}
+library(tidyverse)
+datos <- readRDS("../Data/base_personas_gasto.rds")
+p <- ggplot(datos, aes(x = ingreso, y = gasto)) +
+  geom_point(color = "#0B4C6B") +
+  labs(title = "Dispersion de datos: antes de modelar",
+       x = "X", y = "Y") +
+  theme_minimal(base_size = 12)+
+  xlim(0 , 50000)+ ylim(0 , 50000)
+
+p
+```
+
+# Sección 2: Familia de modelos y modelo ajustado {#familia-ajustado}
+
+## Slide 2.1 — Concepto: familia vs miembro ajustado
+
+* **Familia de modelos**: conjunto de funciones posibles (ej. lineales, polinomiales, logísticas).
+* **Modelo ajustado**: parámetros estimados que describen el miembro concreto de la familia.
+* Importante: seleccionar familia adecuada según pregunta de interés y naturaleza de los datos.
+
+::: notes
+Explicar con la analogía de escoger una familia de curvas y luego elegir la que mejor se aproxime a los datos.
+:::
+
+## Slide 2.2 — Código: ajuste lineal y resumen
+
+```{r message=FALSE, warning=FALSE}
+mod1 <- lm(y ~ x, data = datos)
+summary(mod1)
+
+# Añadir predicciones y residuos
+library(modelr)
+datos <- datos %>%
+  add_predictions(mod1, var = "pred") %>%
+  add_residuals(mod1, var = "resid")
+
+# Grafico con linea ajustada
+ggplot(datos, aes(x, y)) +
+  geom_point(color = "#0B4C6B", alpha = 0.7) +
+  geom_line(aes(y = pred), color = "#1B7AA0", size = 1) +
+  labs(title = "Ajuste lineal: modelo estimado",
+       subtitle = "lm(y ~ x)", x = "X", y = "Y") +
+  theme_minimal(base_size = 12)
+```
+
+::: notes
+Interpretar coeficientes: intercepto y pendiente; R^2; p-valores (si se usa). Advertir sobre supuestos.
+:::

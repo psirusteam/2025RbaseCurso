@@ -57,12 +57,39 @@ read_csv(), etc.
 
 # Carga e importación de base de datos
 
-Antes de analizar, debemos leer los datos y traerlos a R. Una vez cargados, los datos se
-guardan en un objeto para poder explorarlos y usarlos.
+Antes de analizar, debemos importar o leer los datos y traerlos a R. Esto significa que R toma la información que está guardada en un archivo externo (como Excel, CSV, RDS, SPSS, etc.) y la convierte en un objeto dentro del entorno de trabajo.
 
--   Ejemplo: cargar un archivo RDS (.rds)
+Una vez los datos están cargados en un objeto (por ejemplo, un data frame llamado datos), podemos visualizarlos, limpiarlos, transformarlos, hacer gráficos o aplicar modelos estadísticos. Es decir, importar los datos es el paso que conecta la información real con el análisis que haremos en R.
 
 # Carga e importación de base de datos
+
+## **Formatps más comunes**
+
+| **Tipo de archivo**     | **Librería**        | **Función para importar** | **Ejemplo en R**                                         |
+|--------------------------|----------------------|----------------------------|----------------------------------------------------------|
+| CSV                      | readr     | `read_csv()`               | `datos <- read_csv("data/archivo.csv")`                 |
+| Texto delimitado “;”     | readr                | `read_delim()`             | `datos <- read_delim("data/archivo.txt", delim = ";")`  |
+| Texto delimitado tab     | readr                | `read_tsv()`               | `datos <- read_tsv("data/archivo.tsv")`                 |
+| Excel (.xlsx)     | readxl               | `read_excel()`             | `datos <- read_excel("data/datos.xlsx")`                |
+| RDS (.rds)               | Base de R            | `readRDS()`                | `datos <- readRDS("data/base.rds")`                     |
+| RData (.RData)           | Base de R            | `load()`                   | `load("data/mi_objeto.RData")`                          |
+
+# Carga e importación de base de datos
+
+## **Otros formatos**
+
+| **Tipo de archivo**     | **Librería**        | **Función para importar** | **Ejemplo en R**                                         |
+|--------------------------|----------------------|----------------------------|----------------------------------------------------------|
+| SPSS (.sav)              | haven                | `read_sav()`               | `datos <- read_sav("data/archivo.sav")`          |
+| Stata (.dta)             | haven                | `read_dta()`               | `datos <- read_dta("data/archivo.dta")`          |
+| JSON                     | jsonlite             | `fromJSON()`               | `datos <- fromJSON("data/archivo.json")`      |
+| CSV grande (.csv.gz)     | data.table           | `fread()`                  | `datos <- fread("data/archivo.csv.gz")`     |
+
+
+
+# Carga e importación de base de datos
+
+-   Ejemplo: cargar un archivo RDS (.rds)
 
 ```{r, echo=TRUE}
 # Importar la base (ejemplo)
@@ -70,7 +97,7 @@ datos <- readRDS(
   "../Data/base_personas.rds"
 ) # readdRDS es una funcion base de R
 # Ver las primeras filas
-head(datos,5)
+head(datos,3)
 
 ```
 
@@ -107,6 +134,7 @@ Esto es útil, pero no suficiente si no guardamos los resultados.
 
 ```{r, echo=TRUE, include=TRUE}
 x <- 3 * 4
+x
 resultado <- (59 + 73 + 2) / 3
 resultado
 ```
@@ -199,6 +227,105 @@ levels(x_fac)
 # Date (fecha)
 x_date <- as.Date("2025-10-21")
 class(x_date)
+```
+
+# Explorar: conocimientos básicos
+
+## **Clases de objetos**
+
+En R, los datos no se guardan de forma suelta, sino dentro de objetos. Estos objetos pueden tener diferentes estructuras o “clases”, y conocerlas es clave para trabajar correctamente.
+
+# Explorar: conocimientos básicos
+
+## **Clases de objetos**
+
+| **Tipo de objeto** | **Descripción** 
+|--------------------|------------------|
+| **Vector**         | Conjunto básico de valores del mismo tipo. | 
+| **Factor**         | Vector para datos categóricos con niveles definidos. | 
+| **Matrix**         | Arreglo rectangular de datos numéricos o de un solo tipo. | 
+| **Array**          | Extiende la idea de matriz a más de dos dimensiones. | 
+| **Data Frame**     | Tabla similar a Excel; cada columna puede tener distinto tipo de dato. | 
+| **Tibble**         | Versión moderna del data frame (tidyverse), más ordenada y amigable. | 
+| **List**           | Contenedor que puede almacenar objetos de cualquier tipo y tamaño. |
+
+
+# Explorar: conocimientos básicos
+
+## **Clases de objetos: Vector**
+
+```{r, echo=TRUE, include=TRUE}
+# Vector numérico
+edades <- c(25, 30, 28, 40)
+edades
+
+# Vector de texto (character)
+nombres <- c("Ana", "Luis", "María")
+nombres
+
+# Vector lógico (TRUE / FALSE)
+es_mayor_edad <- c(TRUE, TRUE, FALSE, TRUE)
+es_mayor_edad
+```
+
+# Explorar: conocimientos básicos
+
+## **Clases de objetos: Factor**
+
+```{r, echo=TRUE, include=TRUE}
+sexo <- factor(c("Mujer", "Hombre", "Mujer", "Hombre"))
+levels(sexo)       # Niveles del factor
+class(sexo)        # "factor"
+```
+
+# Explorar: conocimientos básicos
+
+## **Clases de objetos: Matriz**
+
+```{r, echo=TRUE, include=TRUE}
+matriz_ejemplo <- matrix(1:9, nrow = 3, ncol = 3)
+matriz_ejemplo
+```
+
+# Explorar: conocimientos básicos
+
+## **Clases de objetos: Data Frame**
+
+```{r, echo=TRUE, include=TRUE}
+personas <- data.frame(
+  nombre = c("Ana", "Luis", "María"),
+  edad   = c(23, 30, 28),
+  ingreso = c(1200, 1500, 1800)
+)
+
+personas
+class(personas)  # "data.frame"
+```
+
+# Explorar: conocimientos básicos
+
+## **Clases de objetos: Tibble**
+
+```{r, echo=TRUE, include=TRUE}
+personas_tibble <- tibble(
+  nombre = c("Ana", "Luis", "María"),
+  edad   = c(23, 30, 28),
+  ingreso = c(1200, 1500, 1800)
+)
+personas_tibble
+```
+
+# Explorar: conocimientos básicos
+
+## **Clases de objetos: Lista**
+
+```{r, echo=TRUE, include=TRUE}
+mi_lista <- list(
+  numeros = c(1, 2, 3),
+  tabla = personas
+)
+
+mi_lista
 ```
 
 # Explorar: conocimientos básicos

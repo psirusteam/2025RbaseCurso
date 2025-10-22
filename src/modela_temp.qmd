@@ -1,0 +1,468 @@
+---
+title: "Introducción al modelado con R"
+subtitle: "Curso Básico R"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: true
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+# output:
+#   beamer_presentation:
+#     theme: "CambridgeUS"
+#     colortheme: "dove"
+#     fonttheme: "professionalfonts"
+#     slide_level: 2
+#     aspectratio: 1610
+#     toc: false
+#     includes:
+#       in_header: header.tex
+# header-includes:
+  # - \usepackage[T1]{fontenc}
+  # - \usepackage{xcolor}
+  # - \definecolor{cepal-blue}{HTML}{0B4C6B}
+  # - \definecolor{cepal-light}{HTML}{1B7AA0}
+  # - \definecolor{cepal-gray}{HTML}{6B6B6B}
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+# Introducción {#intro}
+
+##  El Modelo: Señal y Ruido
+
+El modelado es una herramienta para la Exploración de Datos (EDA).
+
+*Definición Fundamental*
+
+* Un **modelo** es una representación simplificada de la realidad que captura patrones relevantes (señal) y deja fuera la variabilidad irrelevante (ruido).
+
+* Propósitos: **describir**, **resumir** y **predecir**.
+
+
+:::{.callout-tip}
+### George Box:
+"Todos los modelos están equivocados, algunos son útiles.".
+:::
+
+## Definición y propósito
+
+Su propósito es distinguir:
+  
+* Señal ($f(X)$): Los patrones verdaderos generados por el fenómeno de interés.
+      
+      
+* Ruido ($\epsilon$): Las variaciones aleatorias o el error que no nos interesa.
+
+:::{.callout-tip}
+### Ecuación del Modelo:
+
+$$
+Y = f(X) + \epsilon
+$$
+:::
+
+*En este apartado, nos enfocamos en modelos predictivos (que generan $\hat{Y}$).*
+
+
+## El Rol Exploratorio del Modelo
+
+El foco en esta sección es usar modelos para *construir intuición* y encontrar patrones sutiles.
+
+**Función en EDA**
+
+* Se utiliza para extraer primero la Señal conocida, y luego examinar lo que queda, es decir, el Ruido ($\epsilon$) o residuales.
+
+* Si encontramos patrones en los residuales, hemos descubierto una nueva señal que el modelo inicial omitió.
+
+
+
+## La Regla Crítica: Exploración vs. Confirmación
+
+Es fundamental distinguir la fase de búsqueda de patrones de la fase de prueba formal.
+
+**Principio de la Independencia**
+
+* Exploración (Generación de Hipótesis): Puedes usar un dato muchas veces.
+
+* Confirmación (Inferencia Formal): Solo puedes usar una observación **UNA SOLA VEZ**.
+
+:::{.callout-important}
+### Advertencia:
+Si usas los mismos datos para generar y confirmar una hipótesis, serás **demasiado optimista**. 
+:::
+
+# Sección 1: ¿Qué es modelar? {#que-es-modelar}
+
+## Slide 1.2 — Ejemplo práctico: visualización previa al ajuste
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+datos <- readRDS("../Data/base_personas_gasto.rds")
+p <- ggplot(datos, aes(x = ingreso, y = gasto)) +
+  geom_point(color = "#0B4C6B") +
+  labs(title = "Dispersion de datos: antes de modelar",
+       x = "X", y = "Y") +
+  theme_minimal(base_size = 12)+
+  xlim(0 , 50000)+ ylim(0 , 50000)
+
+p
+```
+
+# Sección 2: Familia de modelos y modelo ajustado {#familia-ajustado}
+
+## Slide 2.1 — Concepto: familia vs miembro ajustado
+
+* **Familia de modelos**: conjunto de funciones posibles (ej. lineales, polinomiales, logísticas).
+* **Modelo ajustado**: parámetros estimados que describen el miembro concreto de la familia.
+* Importante: seleccionar familia adecuada según pregunta de interés y naturaleza de los datos.
+
+::: notes
+Explicar con la analogía de escoger una familia de curvas y luego elegir la que mejor se aproxime a los datos.
+:::
+
+## Slide 2.2 — Código: ajuste lineal y resumen
+
+```{r message=FALSE, warning=FALSE}
+mod1 <- lm(y ~ x, data = datos)
+summary(mod1)
+
+# Añadir predicciones y residuos
+library(modelr)
+datos <- datos %>%
+  add_predictions(mod1, var = "pred") %>%
+  add_residuals(mod1, var = "resid")
+
+# Grafico con linea ajustada
+ggplot(datos, aes(x, y)) +
+  geom_point(color = "#0B4C6B", alpha = 0.7) +
+  geom_line(aes(y = pred), color = "#1B7AA0", size = 1) +
+  labs(title = "Ajuste lineal: modelo estimado",
+       subtitle = "lm(y ~ x)", x = "X", y = "Y") +
+  theme_minimal(base_size = 12)
+```
+
+::: notes
+Interpretar coeficientes: intercepto y pendiente; R^2; p-valores (si se usa). Advertir sobre supuestos.
+:::
+
+# Sección 3: Modelos como aproximaciones (Box) {#aproximaciones}
+
+## Slide 3.1 — ¿Por qué aproximar?
+
+* Los datos observados contienen múltiples fuentes de variabilidad: medición, heterogeneidad, procesos no observados.
+* Un modelo captura la estructura importante con pocos parámetros.
+* Riesgo: simplificar en exceso y perder patrones relevantes.
+
+::: notes
+Dar ejemplos: modelar ingreso con covariables socioeconómicas y la omisión de factores culturales.
+:::
+
+## Slide 3.2 — Ejemplo práctico: comparar lineal vs polinomial
+
+```{r message=FALSE, warning=FALSE}
+# generar datos con leve curvatura
+set.seed(42)
+data2 <- tibble(
+  x = runif(200, 0, 10)
+) %>%
+  mutate(y = 1 + 0.8 * x + 0.2 * x^2 + rnorm(200, 0, 3))
+
+mod_lin <- lm(y ~ x, data = data2)
+mod_poly <- lm(y ~ x + I(x^2), data = data2)
+
+# comparar visualmente
+grid <- data2 %>% data_grid(x = seq(min(x), max(x), length = 200))
+grid <- grid %>%
+  add_predictions(mod_lin, var = "pred_lin") %>%
+  add_predictions(mod_poly, var = "pred_poly")
+
+p <- ggplot(data2, aes(x, y)) +
+  geom_point(alpha = 0.4, color = "#0B4C6B") +
+  geom_line(data = grid, aes(x, pred_lin), color = "#6B6B6B", linetype = "dashed") +
+  geom_line(data = grid, aes(x, pred_poly), color = "#1B7AA0") +
+  labs(title = "Comparación: lineal vs polinomial",
+       subtitle = "Línea punteada: lineal; línea sólida: polinomial",
+       x = "X", y = "Y") +
+  theme_minimal(base_size = 12)
+
+p
+```
+
+::: notes
+Mostrar que seleccionar familia incorrecta produce residuos con patrón; discutir trade-off sesgo-varianza.
+:::
+
+# Sección 4: Exploración vs confirmación {#exploracion-confirmacion}
+
+## Slide 4.1 — Distinción y consecuencias
+
+* **Exploración**: generar hipótesis, buscar señales, usar gráficos y modelos para descubrir patrones.
+* **Confirmación**: evaluar hipótesis predefinidas; requiere separación de datos (no reutilizar).
+* Consecuencia: evitar p-hacking, sesgos por sobreajuste.
+
+::: notes
+Subrayar impacto en prácticas de análisis de políticas públicas: decisiones basadas en confirmación robusta.
+:::
+
+## Slide 4.2 — Código: partición 60/20/20 y evaluación
+
+```{r message=FALSE, warning=FALSE}
+set.seed(2025)
+df <- tibble(
+  x = runif(500, 0, 10),
+  y = 2 + 1.5 * x + rnorm(500, 0, 2)
+)
+
+n <- nrow(df)
+ids <- sample(n)
+train <- df[ids[1:floor(0.6*n)], ]
+query <- df[ids[(floor(0.6*n)+1):floor(0.8*n)], ]
+test  <- df[ids[(floor(0.8*n)+1):n], ]
+
+mod_t <- lm(y ~ x, data = train)
+# Usar query para explorar ajustes (no usar test para ajustar)
+mod_q <- lm(y ~ x + I(x^2), data = query)
+# Evaluación final en test
+pred_test <- predict(mod_t, newdata = test)
+rmse <- sqrt(mean((test$y - pred_test)^2))
+rmse
+```
+
+::: notes
+Explicar roles: train para ajustar; query para explorar (probar alternativas); test para confirmar rendimiento final.
+:::
+
+# Sección 5: Modelos lineales (conceptos básicos) {#modelos-lineales}
+
+## Slide 5.1 — Estructura y supuestos
+
+* Forma general: (y = X\beta + \varepsilon).
+* Supuestos comunes: linealidad, independencia, homocedasticidad, normalidad del error (para inferencia clásica).
+* Uso: interpretación de coeficientes, predicción y evaluación de ajuste.
+
+::: notes
+No profundizar en pruebas matemáticas; explicar de forma intuitiva qué implica cada supuesto.
+:::
+
+## Slide 5.2 — Diagnóstico rápido en R
+
+```{r message=FALSE, warning=FALSE}
+# usar el modelo mod1 ya ajustado
+par(mfrow = c(2,2))
+plot(mod1)
+par(mfrow = c(1,1))
+```
+
+::: notes
+Mostrar plots: residuales vs fitted, QQ-plot, escala-localidad, leverage. Explicar qué indicaría problemas en cada uno.
+:::
+
+# Sección 6: Modelos para variables categóricas {#modelos-categoricos}
+
+## Slide 6.1 — Introducción: logística y multinomial
+
+* Cuando la variable respuesta es categórica usar familias apropiadas: logit, probit, multinomial.
+* Interpretación de coeficientes en odds ratio (logit).
+* En R usar `glm()` con `family = binomial()` o paquetes como `nnet` para multinomial.
+
+::: notes
+Dar ejemplo conceptual simple: probabilidad de pertenecer a un grupo según covariables.
+:::
+
+## Slide 6.2 — Código: regresión logística (ejemplo claro)
+
+```{r message=FALSE, warning=FALSE}
+set.seed(100)
+df_bin <- tibble(
+  x = rnorm(300),
+  p = plogis(-0.5 + 1.2 * x),
+  y = rbinom(300, 1, p)
+)
+
+mod_log <- glm(y ~ x, data = df_bin, family = binomial())
+summary(mod_log)
+
+# Probabilidades predichas
+newx <- tibble(x = seq(min(df_bin$x), max(df_bin$x), length = 100))
+newx$prob <- predict(mod_log, newdata = newx, type = "response")
+
+ggplot(df_bin, aes(x, y)) +
+  geom_jitter(height = 0.05, alpha = 0.4, color = "#0B4C6B") +
+  geom_line(data = newx, aes(x, prob), color = "#1B7AA0", size = 1) +
+  labs(title = "Regresión logística: probabilidad estimada",
+       y = "Probabilidad (p)") +
+  theme_minimal(base_size = 12)
+```
+
+::: notes
+Explicar que la línea muestra probabilidad estimada; discutir interpretación del coeficiente como cambio en log-odds.
+:::
+
+# Sección 7: Diagnóstico y evaluación de modelos {#diagnostico-evaluacion}
+
+## Slide 7.1 — Métricas y validación
+
+* Métricas de regresión: RMSE, MAE, R^2 (no reemplaza diagnóstico).
+* Métricas de clasificación: AUC, accuracy, sensibilidad/especificidad.
+* Validación: cross-validation, hold-out, bootstrap.
+
+::: notes
+Relación con capítulo 22: se introduce la idea de validación; capítulos posteriores profundizan en evaluación.
+:::
+
+## Slide 7.2 — Ejemplo: evaluación básica con cross‑validation
+
+```{r message=FALSE, warning=FALSE}
+library(modelr)
+set.seed(2024)
+cv <- crossv_kfold(df, k = 5)
+# función auxiliar para calcular RMSE sobre folds
+rmse_fold <- function(split){
+  train <- analysis(split)
+  test  <- assessment(split)
+  m <- lm(y ~ x, data = train)
+  pred <- predict(m, newdata = test)
+  sqrt(mean((test$y - pred)^2))
+}
+
+rmses <- map_dbl(cv$splits, rmse_fold)
+mean(rmses)
+```
+
+::: notes
+Explicar brevemente por qué CV reduce varianza de la estimación del error de predicción.
+:::
+
+# Sección 8: Predicción {#prediccion}
+
+## Slide 8.1 — Objetivos de la predicción
+
+* Usar el modelo para estimar valores en nuevas unidades o tiempos futuros.
+* Importante: cuantificar incertidumbre en las predicciones.
+* Evitar extrapolación fuera del rango de las covariables.
+
+::: notes
+En contextos de política y planificación, las predicciones deben acompañarse de intervalos y supuestos.
+:::
+
+## Slide 8.2 — Ejemplo: predicciones con intervalos de confianza
+
+```{r message=FALSE, warning=FALSE}
+newdata <- tibble(x = seq(0, 10, length = 20))
+preds <- predict(mod1, newdata = newdata, interval = "prediction")
+newdata <- bind_cols(newdata, as_tibble(preds))
+
+ggplot(newdata, aes(x, fit)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, fill = "#1B7AA0") +
+  geom_line(aes(y = fit), color = "#0B4C6B") +
+  labs(title = "Predicciones con intervalos de predicción",
+       x = "X", y = "Valor predicho") +
+  theme_minimal(base_size = 12)
+```
+
+::: notes
+Distinción: intervalo de predicción vs intervalo de confianza para la media. El primero es más ancho porque incorpora variabilidad residual.
+:::
+
+# Sección 9: Aplicaciones prácticas a encuestas y áreas pequeñas {#areas-pequenas}
+
+## Slide 9.1 — Relevancia del modelado en estimación de áreas pequeñas
+
+* En áreas pequeñas, modelos permiten “apoyar” estimaciones directas cuando la muestra por área es pequeña.
+* Uso de covariables censales y modelos jerárquicos para mejorar precisión.
+* Advertencia: validar fuera de muestra; cuidar supuestos de estructura multiescalar.
+
+::: notes
+Vincular con experiencia del usuario en CEPAL: mencionar EBP, Fay-Herriot, modelos de mezcla.
+:::
+
+## Slide 9.2 — Ejemplo simple: modelo lineal para índice por municipio
+
+```{r message=FALSE, warning=FALSE}
+# simulacion breve, similar a lo presentado antes
+set.seed(2025)
+mun <- tibble(
+  municipio = paste0("M", 1:100),
+  cov1 = runif(100, 0, 10),
+  cov2 = rnorm(100, 50, 10),
+  indicador = 5 + 0.8 * cov1 + 0.3 * cov2 + rnorm(100, 0, 5)
+)
+
+mod_mun <- lm(indicador ~ cov1 + cov2, data = mun)
+summary(mod_mun)
+
+mun <- mun %>% add_predictions(mod_mun, var = "pred") %>% add_residuals(mod_mun, var = "resid")
+
+# gráfico de residuos por cov2
+ggplot(mun, aes(cov2, resid)) +
+  geom_point(color = "#0B4C6B") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#6B6B6B") +
+  labs(title = "Residuales por covariable (ejemplo municipios)", x = "Cov2 (ingreso)", y = "Residuo") +
+  theme_minimal(base_size = 12)
+```
+
+::: notes
+Comentar que este es un ejemplo exploratorio; para SAE real se requieren modelos mixtos y validación robusta.
+:::
+
+# Sección 10: Buenas prácticas y conclusiones {#buenas-practicas}
+
+## Slide 10.1 — Checklist para un análisis basado en modelos
+
+* ¿Cuál es el objetivo: describir, predecir o ambos?
+* ¿Los datos están divididos si queremos confirmar? (train/query/test)
+* ¿Se verificaron los supuestos? (diagnóstico de residuos)
+* ¿Se cuantificó la incertidumbre en predicciones?
+* ¿Se documentaron decisiones de modelado?
+
+::: notes
+Sugerir registrar decisiones en un archivo README o en el propio RMarkdown del proyecto.
+:::
+
+## Slide 10.2 — Recursos, siguientes pasos y referencias
+
+* Capítulos siguientes en R4DS: conceptos básicos de modelos, construcción y comparación de modelos.
+* Lecturas adicionales: Fay & Herriot (SAE), Guía de validación predictiva, artículos sobre overfitting.
+
+**Referencias**
+
+* Wickham, H., Çetinkaya-Rundel, M., & Grolemund, G. *R para Ciencia de Datos*. Cap. 22. [https://es.r4ds.hadley.nz/22-model.html](https://es.r4ds.hadley.nz/22-model.html)
+* Box, G. E. P. "Science and Statistics" (1976).
+
+::: notes
+Ofrecer al público la Rmd completa y los datos simulados como material de apoyo.
+:::
+
+# ANEXOS: Código completo y notas para el expositor {#anexos}
+
+## Anexo A — Código completo (para copiar/pegar)
+
+```{r echo=FALSE}
+# El Rmd incluye el código en cada diapositiva. Aquí puedes recoger todo en un solo bloque si lo deseas.
+```
+
+## Anexo B — Notas de exposición
+
+* Tiempo estimado: 60-90 minutos si se incluye demo en R; 40-50 minutos sin demo.
+* Sugerencia: durante la demo, ejecutar solo ejemplos cortos (simulación pequeña) para evitar tiempos de compilación largos.
+
+::: notes
+Si quieres, genero también la versión .pptx exportada desde RMarkdown.
+:::
