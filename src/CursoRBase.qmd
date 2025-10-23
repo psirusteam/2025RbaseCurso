@@ -20,6 +20,12 @@ editor_options:
     wrap: 90
 ---
 
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
 # Introducción
 
 Cuando trabajamos con datos en R, seguimos un flujo de trabajo que nos permite pasar de
@@ -70,25 +76,25 @@ el análisis que haremos en R.
 
 ## **Formatps más comunes**
 
-| **Tipo de archivo** | **Librería** | **Función para importar** | **Ejemplo en R** |
-|-------------------|-------------------|-------------------|----------------------------------|
-| CSV | readr | `read_csv()` | `datos <- read_csv("data/archivo.csv")` |
-| Texto delimitado “;” | readr | `read_delim()` | `datos <- read_delim("data/archivo.txt", delim = ";")` |
-| Texto delimitado tab | readr | `read_tsv()` | `datos <- read_tsv("data/archivo.tsv")` |
-| Excel (.xlsx) | readxl | `read_excel()` | `datos <- read_excel("data/datos.xlsx")` |
-| RDS (.rds) | Base de R | `readRDS()` | `datos <- readRDS("data/base.rds")` |
-| RData (.RData) | Base de R | `load()` | `load("data/mi_objeto.RData")` |
+| **Tipo de archivo** | **Librería** |  **Ejemplo en R** |
+|-------------------|-------------------|----------------------------------|
+| CSV | readr |  `datos <- read_csv("data/archivo.csv")` |
+| Texto delimitado “;” | readr |  `datos <- read_delim("data/archivo.txt", delim = ";")` |
+| Texto delimitado tab | readr |  `datos <- read_tsv("data/archivo.tsv")` |
+| Excel (.xlsx) | readxl |  `datos <- read_excel("data/datos.xlsx")` |
+| RDS (.rds) | Base de R |  `datos <- readRDS("data/base.rds")` |
+| RData (.RData) | Base de R |  `load("data/mi_objeto.RData")` |
 
 # Carga e importación de base de datos
 
 ## **Otros formatos**
 
-| **Tipo de archivo** | **Librería** | **Función para importar** | **Ejemplo en R** |
-|-------------------|-------------------|-------------------|----------------------------------|
-| SPSS (.sav) | haven | `read_sav()` | `datos <- read_sav("data/archivo.sav")` |
-| Stata (.dta) | haven | `read_dta()` | `datos <- read_dta("data/archivo.dta")` |
-| JSON | jsonlite | `fromJSON()` | `datos <- fromJSON("data/archivo.json")` |
-| CSV grande (.csv.gz) | data.table | `fread()` | `datos <- fread("data/archivo.csv.gz")` |
+| **Tipo de archivo** | **Librería** **Ejemplo en R** |
+|-------------------|-------------------|----------------------------------|
+| SPSS (.sav) | haven | `datos <- read_sav("data/archivo.sav")` |
+| Stata (.dta) | haven |  `datos <- read_dta("data/archivo.dta")` |
+| JSON | jsonlite |  `datos <- fromJSON("data/archivo.json")` |
+| CSV grande (.csv.gz) | data.table |  `datos <- fread("data/archivo.csv.gz")` |
 
 # Carga e importación de base de datos
 
@@ -98,9 +104,9 @@ el análisis que haremos en R.
 # Importar la base (ejemplo)
 datos <- readRDS(
   "../Data/base_personas.rds"
-) # readdRDS es una funcion base de R
+) %>% as.data.frame() # readdRDS es una funcion base de R
 # Ver las primeras filas
-head(datos,3)
+head(datos[, 1:8], 3)
 
 ```
 
@@ -144,6 +150,10 @@ resultado
 
 Con el símbolo \<- le asignamos un valor a un objeto. Esto permite guardar un resultado
 con un nombre y reutilizarlo más adelante en el código.
+
+# Explorar: conocimientos básicos
+
+## **Crear objetos**
 
 ## **Buenas prácticas al nombrar objetos**
 
@@ -360,7 +370,7 @@ rep(c("A","B"), each = 3)  # A A A B B B
 
 ```{r, echo=TRUE, include=TRUE}
 # Resumen rápido de datos
-tail(datos, 3)          # Últimas 3 filas
+tail(datos[, 1:8], 3)          # Últimas 3 filas
 class(datos)            # Clase del objeto (data.frame, vector, etc.)
 names(datos)            # Nombres de columnas
 ```
@@ -431,10 +441,11 @@ para facilitar la lectura.
 ## **Seleccionar variables**
 
 ```{r, echo=TRUE,include=TRUE}
-datos2 <- datos %>% select("id_pers", "edad","sexo", "etnia","area",
-                           "ingreso", "pobreza", "anoest") %>% rename(
+datos2 <- datos %>% select("id_hogar","id_pers", "edad","sexo", 
+                           "etnia","area","ingreso",
+                            "pobreza", "anoest") %>% rename(
  id = id_pers
-)
+) %>% as.data.frame()
 
 head(datos2,5)
 ```
@@ -551,9 +562,6 @@ datos2 <- datos2 %>%
   ))
 ```
 
-# Explorar: Transformación de datos
-
-## **Crear variables con condicionales**
 
 # Explorar: Transformación de datos
 
@@ -595,7 +603,7 @@ crear gráficos, es útil recordar cómo es nuestra base de datos y pensar qué 
 nos gustaría visualizar.
 
 ```{r, echo=TRUE, include=TRUE}
-head(datos2,5)
+head(datos2[, 1:8],5)
 ```
 
 # Explorar: Visualización de datos
@@ -667,20 +675,6 @@ box_plot
 
 # Explorar: Visualización de datos
 
-Otras geoms útiles en ggplot2
-
--   Líneas: geom_line() – Series temporales o secuencias.
-
--   Barras: geom_bar() → cuenta filas (stat = "count").
-
--   Barras: geom_col() → altura = valor (y) ya calculado.
-
--   Densidad: geom_density() – Distribución suavizada.
-
--   Tendencia: geom_smooth() – Curva/recta ajustada.
-
-# Explorar: Visualización de datos
-
 Finalmente, muchas veces nos interesa ver el comportamiento del ingreso total en toda la
 muestra. Para ello, un histograma permite observar la forma de la distribución
 (concentraciones, asimetrías y posibles valores extremos).
@@ -698,6 +692,20 @@ theme_classic()
 ```{r, echo=TRUE, include=TRUE,fig.width=5, fig.height=3 }
 histo
 ```
+
+# Explorar: Visualización de datos
+
+Otras geoms útiles en ggplot2
+
+-   Líneas: geom_line() – Series temporales o secuencias.
+
+-   Barras: geom_bar() → cuenta filas (stat = "count").
+
+-   Barras: geom_col() → altura = valor (y) ya calculado.
+
+-   Densidad: geom_density() – Distribución suavizada.
+
+-   Tendencia: geom_smooth() – Curva/recta ajustada.
 
 # Programar
 
@@ -822,7 +830,8 @@ resultado <- data.frame(pobreza = character(), promedio = numeric())
 for (p in pobre) {
   promedio <- mean(datos2$ingreso[datos2$pobreza == p], 
                    na.rm = TRUE)
-  resultado <- rbind(resultado, data.frame(pobreza = p, promedio = promedio))
+  resultado <- rbind(resultado, 
+                     data.frame(pobreza = p, promedio = promedio))
 }
 
 ```
@@ -837,6 +846,39 @@ resultado
 
 Esto hace lo mismo que si calculáramos el promedio para cada nivel de pobreza, pero
 automáticamente.
+
+# Programar
+
+## **Iteración - for**
+
+- Ejemplo: Para cada combinación de nivel de pobreza y sexo, calcular el promedio y la desviación estándar.
+
+```{r,  echo=TRUE, include=TRUE}
+pobrezas <- unique(datos2$pobreza)
+sexos <- unique(datos2$sexo)
+
+#Resultado vacío
+resultado2 <- data.frame(pobreza=character(), sexo=character(),
+promedio=numeric(), sd=numeric())
+
+for (p in pobrezas) {
+for (s in sexos) {
+x <- datos2$ingreso[datos2$pobreza == p & datos2$sexo == s]
+resultado2 <- rbind(resultado2, data.frame(
+pobreza = p, sexo = s,promedio= mean(x, na.rm = TRUE),
+sd = sd(x, na.rm = TRUE)))}}
+```
+
+# Programar
+
+## **Iteración - for**
+
+```{r,  echo=TRUE, include=TRUE}
+resultado2
+```
+
+Esto hace lo mismo que calcular esas medidas para cada grupo pobreza × sexo, pero automáticamente.
+
 
 # Programar
 
@@ -863,7 +905,35 @@ while (datos2$ingreso[i] <= 15000000 | datos2$sexo[i] != "Mujer") {
   i <- i + 1   # Avanzar a la siguiente persona
 }
 
-datos2[i, ]
+datos2[i,1:8 ]
+```
+
+# Programar
+
+## **Iteración - while**
+
+-   Ejemplo: Encontrar el primer Hombre del área rural con ingreso entre 2 y 4 millones.
+
+```{r,  echo=TRUE, include=TRUE}
+i <- 1
+
+while (
+datos2$sexo[i] != "Hombre" |
+datos2$area[i] != "2" |
+is.na(datos2$ingreso[i]) |
+datos2$ingreso[i] < 2000000 |
+datos2$ingreso[i] > 4000000
+) {
+i <- i + 1 # Avanzar a la siguiente persona
+}
+```
+
+# Programar
+
+## **Iteración - while**
+
+```{r,  echo=TRUE, include=TRUE}
+datos2[i,1:8 ]
 ```
 
 # Programar
@@ -918,12 +988,37 @@ hogares <- ingreso_pc_por_hogar(datos2)
 head(hogares,5)
 ```
 
-# Modelar
+# Programar
 
-Utilizar técnicas estadísticas o matemáticas para responder preguntas específicas o hacer
-predicciones.
+## Crear funciones
 
-# Comunicar
+-   Ejemplo: Función para clasificar hogares como pobres según una línea de pobreza usando ingreso per cápita.
 
-Presentar los resultados de forma clara mediante informes, tablas,gráficos o
-presentaciones.
+```{r,  echo=TRUE, include=TRUE}
+pobreza_por_hogar <- function(base, linea_pobreza) {
+base %>%
+group_by(id_hogar) %>%
+summarise(
+n_miembros = n(),
+ingreso_hogar= sum(ingreso, na.rm = TRUE),
+.groups = "drop"
+) %>%
+mutate(
+ingreso_pc = ingreso_hogar / n_miembros,
+pobre = ifelse(ingreso_pc < linea_pobreza, "Pobre", "No pobre")
+)
+}
+```
+
+# Programar
+
+## Crear funciones
+
+Usarla (ejemplo: línea de pobreza mensual de 480.000)
+```{r,  echo=TRUE, include=TRUE}
+
+# Usarla
+hogares_lp <- pobreza_por_hogar(datos2, linea_pobreza = 480000)
+head(hogares_lp, 5)
+```
+
