@@ -26,18 +26,264 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(printr)
 ```
 
+# Introducción
 
-## Bullets
+Hasta ahora aprendimos a importar, explorar, transformar y modelar datos en R. Pero un
+buen análisis no sirve si no se puede explicar claramente. Por eso, los siguientes
+capítulos se enfocan en comunicar resultados.
 
-When you click the **Render** button a document will be generated that includes:
+¿Qué veremos?
 
--   Content authored with markdown
--   Output from executable code
+-   R Markdown : integrar texto, código y resultados en un mismo documento (modo notebook
+    o reporte).
 
-## Code
+# R Markdown
 
-When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
+**¿Qué es R Markdown?**
 
-```{r}
-1 + 1
+R Markdown es un formato que permite combinar código, resultados y texto en un solo
+documento reproducible. Desde un archivo puedes generar PDF, Word, presentaciones,
+dashboards, sitios web y más.
+
+¿Para qué se usa? - Comunicar resultados a tomadores de decisión (sin mostrar el
+código). - Colaborar con otros analistas o contigo mismo en el futuro (código +
+resultados).
+
+# R Markdown
+
+**R Markdown no requiere configuración compleja, solo:**
+
+1.  Instalar R y RStudio
+
+-   R: desde https://cran.r-project.org
+-   RStudio: desde https://posit.co/download/rstudio/
+
+# R Markdown
+
+2.  Instalar el paquete R Markdown (solo la primera vez)
+
+En RStudio, ir a la consola y escribir:
+
+```{r, echo=TRUE}
+#install.packages("rmarkdown")
 ```
+
+*(RStudio ya trae integrado lo necesario para usarlo, pero instalar el paquete asegura que
+funcione todo correctamente)*
+
+# R Markdown
+
+3.  Para empezar un archivo R Markdown
+
+**En Rstudio:**
+
+File → New File → R Markdown…
+
+![](../Data/img/rmarkdown.jpg)
+
+# R Markdown
+
+**¿Qué contiene un archivo R Markdown (.Rmd)?**
+
+| Elemento | ¿Qué es? | Ejemplo |
+|----------------------|---------------------------------------------|----------------------|
+| Encabezado YAML | Metadatos del documento, va entre --- | title:, author:, date:, output: |
+| Texto Markdown | Texto con formato (títulos, negrita, itálica, listas) | \# Título, **negrita**, *itálica* |
+| Chunk de código | Código R que se ejecuta dentro del documento | `{r}` |
+
+# R Markdown
+
+Este es el formato mínimo que debe tener cualquier archivo R Markdown para poder
+funcionar.
+
+**Ejemplo básico de estructura (.Rmd)**
+
+``` yaml
+---
+title: "Curso R Básico R Markdown"
+output: html_document
+---
+```
+
+Este bloque se llama YAML header y siempre va al inicio del archivo .Rmd. Sin él, R
+Markdown no sabrá qué tipo de documento debe generar.
+
+# R Markdown
+
+En el encabezado YAML también podemos decidir a qué formato queremos exportar el
+documento.
+
+| Formato            | ¿Qué genera?                            | YAML                  |
+|--------------------|-----------------------------------------|-----------------------|
+| HTML (por defecto) | Archivo web interactivo                 | output: html_document |
+| PDF                | Archivo en formato PDF (requiere LaTeX) | output: pdf_document  |
+| Word               | Documento de Word (.docx)               | output: word_document |
+
+# R Markdown
+
+## Formateo de texto con Markdown
+
+La prosa en un archivo .Rmd se escribe usando Markdown, un lenguaje sencillo para dar
+formato a texto.
+
+**Formato de texto**
+
+| Formato     | Cómo se escribe           | Resultado |
+|-------------|---------------------------|-----------|
+| Cursiva     | `*texto*` o `_texto_`     | *texto*   |
+| Negrita     | `**texto**` o `__texto__` | **texto** |
+| Código      | `` `codigo` ``            | `codigo`  |
+| Superíndice | `x^2^`                    | x\^2      |
+| Subíndice   | `x~2~`                    | x~2~      |
+
+# R Markdown
+
+## Formateo de texto con Markdown
+
+**Encabezados**
+
+| Nivel | Cómo se escribe |
+|-------|-----------------|
+| H1    | \# Título       |
+| H2    | \## Subtítulo   |
+| H3    | \### Sección    |
+
+# R Markdown
+
+## Formateo de texto con Markdown
+
+**Listas**
+
+Las listas ayudan a organizar ideas y pasos. Usa viñetas para items sin orden y enumeradas
+para secuencias, instrucciones o rankings. Puedes anidar sub-items con dos espacios.
+
+``` markdown
+* Elemento 1 en lista no enumerada
+* Elemento 2
+  * Elemento 2a
+  * Elemento 2b
+
+1. Elemento 1 en lista enumerada
+1. Elemento 2 (la numeración se ajusta automáticamente)
+```
+
+# R Markdown
+
+## Formateo de texto con Markdown
+
+**Enlaces e imágenes**
+
+Los enlaces permiten citar fuentes y recursos; las imágenes apoyan la comprensión. Usa
+texto alternativo (alt-text) descriptivo para accesibilidad y exportaciones.
+
+``` markdown
+<https://ejemplo.com>
+
+[texto del enlace](https://ejemplo.com)
+
+![Gráfico de dispersión mpg vs hp](ruta/de/la/imagen.png)
+```
+
+# R Markdown
+
+## Formateo de texto con Markdown
+
+**Tablas en Markdown**
+
+Las tablas presentan comparaciones y resúmenes. Mantén pocos campos y ordena por lo más
+importante.
+
+``` markdown
+| Primer encabezado     | Segundo encabezado     |
+|-----------------------|------------------------|
+| Contenido de la celda | Contenido de la celda  |
+| Contenido de la celda | Contenido de la celda  |
+```
+
+# R Markdown
+
+## **Chunks de código en R**
+
+Un chunk es un bloque donde se escribe y ejecuta código dentro del archivo
+
+```{r, echo=TRUE, eval=FALSE}
+# Aquí va el código en R
+```
+
+-   Insertar nuevo chunk: Ctrl + Alt + I
+-   Ejecutar todo el chunk: Ctrl + Shift + Enter
+
+# R Markdown
+
+## **Chunks de código en R**
+
+| Parámetro    | ¿Qué hace?                                                                 |
+|--------------|----------------------------------------------------------------------------|
+| `echo`       | Muestra (`TRUE`) u oculta (`FALSE`) el código en el documento final.       |
+| `eval`       | Ejecuta (`TRUE`) o no ejecuta (`FALSE`) el código del chunk.               |
+| `message`    | Muestra (`TRUE`) u oculta (`FALSE`) los mensajes del código (ej. library). |
+| `warning`    | Muestra u oculta advertencias generadas por el código.                     |
+| `include`    | Si es `FALSE`, ejecuta el chunk pero no muestra ni código ni resultados.   |
+| `fig.width`  | Ancho del gráfico (en pulgadas) generado dentro del chunk.                 |
+| `fig.height` | Alto del gráfico (en pulgadas).                                            |
+| `fig.cap`    | Agrega un pie de figura o título al gráfico.                               |
+| `cache`      | Si es `TRUE`, guarda los resultados del chunk para no volver a ejecutarlo. |
+
+# Quarto Markdown (.qmd)
+
+**¿Qué es Quarto? (usado desde RStudio)**
+
+-   Es la evolución de R Markdown, desarrollada por Posit (antes RStudio).
+
+-   Funciona muy parecido a un archivo .Rmd, pero usa la extensión .qmd.
+
+-   Se puede crear, editar y renderizar completamente desde RStudio.
+
+-   Permite generar HTML, PDF, Word, presentaciones, dashboards, páginas web, libros, etc.
+
+-   Se utiliza mucho cuando queremos hacer presentaciones, clases o diapositivas desde R.
+
+# Quarto Markdown (.qmd)
+
+**¿Por qué usar Quarto cuando hacemos presentaciones?**
+
+| Para presentaciones                          | ¿Por qué es útil?                                                               |
+| -------------------------------------------- | ------------------------------------------------------------------------------- |
+| Soporta RevealJS, Beamer, PowerPoint       | Puedes hacer diapositivas como en PowerPoint, pero con código y texto dinámico. |
+| Permite animaciones y transiciones         | Ideal para clases o conferencias.                                               |
+| Integración directa con RStudio            | Solo haces clic en **Render** y ya tienes tus diapositivas listas.              |
+| Se puede exportar a PDF, HTML o PowerPoint | Una misma presentación puede tener varios formatos.                             |
+
+# Quarto Markdown (.qmd)
+
+  Para empezar un archivo Quarto Markdown
+
+**En Rstudio:**
+
+File → New File → Quarto Document…
+
+![](../Data/img/quarto.jpg)
+
+# Quarto Markdown (.qmd)
+
+**Ejemplo básico para documento .qmd**
+
+``` markdown
+title: "Presentación en Quarto"
+format: 
+  beamer-pdf:       # Para PDF estilo Beamer
+    slide-level: 2
+```
+
+# Quarto Markdown (.qmd)
+
+**Formatos de salida más usados en Quarto**
+
+| Formato      | ¿Qué genera?              | YAML                 |
+| ------------ | ------------------------- | -------------------- |
+| HTML         | Página web o presentación | `format: html`       |
+| PDF (Beamer) | Presentación tipo PDF     | `format: beamer-pdf` |
+| PowerPoint   | Diapositivas editables    | `format: pptx`       |
+| Word         | Documento .docx           | `format: docx`       |
+
+
