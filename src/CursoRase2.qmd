@@ -1,0 +1,815 @@
+---
+title: "Introducción al modelado con R"
+subtitle: "Curso Básico R"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: true
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción {#intro}
+
+##  El Modelo: Señal y Ruido
+
+El modelado es una herramienta para la Exploración de Datos (EDA).
+
+*Definición Fundamental*
+
+* Un **modelo** es una representación simplificada de la realidad que captura patrones relevantes (señal) y deja fuera la variabilidad irrelevante (ruido).
+
+* Propósitos: **describir**, **resumir** y **predecir**.
+
+
+:::{.callout-tip}
+### George Box:
+"Todos los modelos están equivocados, algunos son útiles.".
+:::
+
+## Definición y propósito
+
+Su propósito es distinguir:
+  
+* Señal ($f(X)$): Los patrones verdaderos generados por el fenómeno de interés.
+      
+      
+* Ruido ($\epsilon$): Las variaciones aleatorias o el error que no nos interesa.
+
+:::{.callout-tip}
+### Ecuación del Modelo:
+
+$$
+Y = f(X) + \epsilon
+$$
+:::
+
+*En este apartado, nos enfocamos en modelos predictivos (que generan $\hat{Y}$).*
+
+
+## El Rol Exploratorio del Modelo
+
+El foco en esta sección es usar modelos para *construir intuición* y encontrar patrones sutiles.
+
+**Función en EDA**
+
+* Se utiliza para extraer primero la Señal conocida, y luego examinar lo que queda, es decir, el Ruido ($\epsilon$) o residuales.
+
+* Si encontramos patrones en los residuales, hemos descubierto una nueva señal que el modelo inicial omitió.
+
+
+
+## La Regla Crítica: Exploración vs. Confirmación
+
+Es fundamental distinguir la fase de búsqueda de patrones de la fase de prueba formal.
+
+**Principio de la Independencia**
+
+* Exploración (Generación de Hipótesis): Puedes usar un dato muchas veces.
+
+* Confirmación (Inferencia Formal): Solo puedes usar una observación **UNA SOLA VEZ**.
+
+:::{.callout-important}
+### Advertencia:
+Si usas los mismos datos para generar y confirmar una hipótesis, serás **demasiado optimista**. 
+:::
+
+## Ejemplo práctico: visualización previa al ajuste
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE ,out.height= 300}
+library(tidyverse)
+datos <- readRDS("../Data/base_personas_gasto.rds")
+p <- ggplot(datos, aes(x = ingreso, y = gasto)) +
+  geom_point(color = "#0B4C6B") +
+  labs(title = "Dispersion de datos: antes de modelar",
+       x = "Ingreso", y = "Gasto") +
+  theme_minimal(base_size = 12)+
+  xlim(0 , 50000)+ ylim(0 , 50000)
+
+p
+```
+
+# Sección 2: Familia de modelos y modelo ajustado {#familia-ajustado}
+
+## Concepto: familia vs modelo ajustado
+
+* **Familia de modelos**: conjunto de funciones posibles (ej. lineales, polinomiales, logísticas).
+
+* **Modelo ajustado**: parámetros estimados que describen el miembro concreto de la familia.
+
+:::{.callout-important}
+### Importante: 
+Seleccionar familia adecuada según pregunta de interés y naturaleza de los datos.
+:::
+
+## Modelos poisibles 
+
+```{r, echo=FALSE, out.height= 300}
+set.seed(123)
+modelos <- tibble(
+  a1 = runif(50, 750, 780),
+  a2 = runif(50, 0.1, 1)
+)
+
+ggplot(datos, aes(x = ingreso, y = gasto)) +
+  geom_abline(aes(intercept = a1, slope = a2), data = modelos,
+              alpha = 1 / 4) +
+  geom_point() +
+   labs(title = "Dispersion de datos",
+       x = "Ingreso", y = "Gasto") +
+  theme_minimal(base_size = 12)+
+  xlim(-1 , 50000)+ ylim(-1 , 50000)
+```
+
+
+## Flujo de trabajo
+
+* Flujo práctico: limpieza → visualización → modelado → diagnóstico → comunicación.
+
+* Presentar la lógica del modelo simple antes de pasar a construcción y comparación.
+
+
+## ¿Cómo medimos qué tan bien se ajusta un modelo?
+
+- Cada punto del gráfico representa un valor observado $(x_i, y_i)$.
+- El modelo genera un valor predicho $\hat{y}_i = a_0 + a_1 x_i$.
+- La **distancia vertical** entre el punto real y la recta del modelo es el **error de predicción**:
+  $$
+  e_i = y_i - \hat{y}_i
+  $$
+
+- Visualmente, es la diferencia entre el punto y la línea del modelo
+
+
+## Gráfico de los datos, la recta y los errores individuales
+
+```{r, echo=FALSE, out.height= 300}
+
+a0 <- 761
+a1 <- 0.75
+
+datos <- datos %>%
+  mutate(
+    y_pred = a0 + a1 * ingreso,
+    error = gasto - y_pred
+  )
+
+ggplot(datos , aes(x = ingreso, y = gasto)) +
+  geom_abline(intercept = a0, slope = a1, colour = "blue", size = 1) +
+  geom_point(size = 2, colour = "grey30") +
+  geom_segment(aes(xend = ingreso, yend = y_pred), colour = "red", linetype = "dashed") +
+  labs(
+    title = "Distancia (error) entre la observación y el modelo",
+    subtitle = expression(hat(y) == a[0] + a[1]*x),
+   x = "Ingreso", y = "Gasto") +
+  theme_minimal(base_size = 12)+
+  xlim(30000 , 50000)+ ylim(5000 , 50000)
+
+```
+
+
+## Código ilustrativo:
+
+```{r, echo=TRUE}
+model1 <- function(a, data) {
+  a[1] + data$ingreso * a[2]
+}
+
+datos$y_pred <-  model1(c(762, 0.75), datos)
+datos %>% select(upm, id_hogar, id_pers, gasto, 
+                 ingreso, y_pred) %>%
+  head()
+
+```
+
+##  Medir la calidad del ajuste
+
+* Tenemos `r nrow(datos)` distancias (una por observación).
+* Para resumirlas en un único número, usamos la **raíz del error cuadrático medio (RMSE)**:
+  $$
+  RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n}(y_i - \hat{y}_i)^2}
+  $$
+* RMSE penaliza más los errores grandes y tiene las mismas unidades que la variable dependiente.
+
+
+## Raíz del Error Cuadrático Medio con R
+
+```{r, echo = TRUE}
+measure_distance <- function(mod, data) {
+  diff <- data$gasto - model1(mod, data)
+  sqrt(mean(diff^2))
+}
+
+measure_distance(c(a0, a1), datos)
+```
+
+
+```{r, echo = TRUE}
+datos %>% summarise(RMSE =  sqrt(mean((gasto - y_pred)^2)))
+
+```
+
+
+## Selección del mejor modelo
+
+* Se evalúan muchos modelos con diferentes parámetros $(a_1, a_2)$.
+
+* Para cada uno se calcula la distancia (RMSE).
+
+* Los modelos con menor distancia son los que **mejor ajustan los datos**.
+
+* En el gráfico, los modelos más brillantes son los mejores.
+
+## Selección el modelo con menor RMSE
+
+```{r, echo=TRUE}
+sim1_dist <- function(a1, a2) measure_distance(c(a1, a2), datos)
+
+modelos <- modelos %>%
+  mutate(dist = purrr::map2_dbl(a1, a2, sim1_dist),
+         orden = rank(dist)) 
+head(modelos)
+```
+
+## Los modelos más opcionados 
+
+
+```{r, echo=FALSE, out.height= 300}
+ggplot(datos, aes(x = ingreso, y = gasto)) +
+  geom_point(size = 2, colour = "grey30") +
+  geom_abline(
+    aes(intercept = a1, slope = a2, colour = -dist),
+    data = filter(modelos, rank(dist) <= 10)
+  ) +labs( x = "Ingreso", y = "Gasto") +
+  theme_minimal(base_size = 12)+
+  xlim(-1 , 50000)+ ylim(-1 , 50000)
+```
+
+
+
+## Código: ajuste lineal y resumen
+
+R cuenta con una herramienta diseñada especialmente para ajustar modelos lineales llamada `lm`
+
+```{r message=FALSE, echo=TRUE, warning=FALSE, out.height= 300}
+library(broom)
+mod1 <- lm(gasto ~ ingreso, data = datos)
+tidy(mod1)
+```
+
+## Visualización del modelo ajustado
+
+```{r message=FALSE, warning=FALSE, out.height= 200, fig.align='center'}
+a0 <- coef(mod1)[1]  # Intercepto
+a1 <- coef(mod1)[2]  # Pendiente
+ggplot(datos, aes(x = ingreso, y = gasto)) +
+  geom_point(color = "#0B4C6B", alpha = 0.7) +
+  geom_abline(intercept = a0, slope = a1, colour = "red", size = 1) +
+  labs(title = "Ajuste lineal: modelo estimado",
+       subtitle = "lm(gasto ~ ingreso)", x = "Ingreso", y = "Gasto") +
+  theme_minimal(base_size = 12) +
+    xlim(0 , 50000)+ ylim(0 , 50000)
+```
+
+**Interpretación final:**
+
+> Los modelos con menor distancia representan la mejor combinación de parámetros para describir la relación entre (x) y (y).
+
+## Predicciones y errores 
+
+- Para modelos simples, podemos analizar el patrón que captura el modelo revisando sus coeficientes ajustados.
+
+- Un enfoque más práctico es entender el modelo a través de las predicciones que genera sobre los datos.
+
+- Los *residuos* —las diferencias entre los valores observados y los predichos— muestran lo que el modelo no logra capturar y son esenciales para evaluar la calidad del ajuste.
+
+## Predicciones
+
+Primero generamos una **grilla de valores** del predictor `ingreso` y luego calculamos las predicciones del modelo.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, out.height= 300}
+library(modelr)
+datos <- datos %>%
+  add_predictions(mod1, var = "pred") 
+
+datos %>% select(upm, id_hogar, id_pers, gasto, 
+                 ingreso, pred) %>%  head()
+```
+
+
+## Visualización de las predicciones
+
+```{r, fig.align='center', out.height=300}
+ggplot(datos, aes(x = ingreso, y = gasto)) +
+  geom_point(color = "#0B4C6B", alpha = 0.7) +
+  geom_line(aes(y = pred),  colour = "red", linewidth = 1) +
+  labs(
+    title = "Predicciones del modelo",
+    subtitle = "Recta de regresión ajustada sobre los datos",
+    x = "Ingreso",
+    y = "Gasto"
+  ) +
+  theme_minimal(base_size = 14) +
+    xlim(0 , 50000)+ ylim(0 , 50000)
+```
+
+
+## Residuos
+
+Agregamos los **residuos** (diferencias entre los valores observados y los predichos) al conjunto de datos:
+
+```{r}
+datos <- datos %>%
+  add_residuals(mod1,var = "resid")
+
+datos %>% select(upm, id_hogar, id_pers, gasto, 
+                 ingreso, pred, resid) %>%  head()
+```
+
+---
+
+### Distribución de los residuos
+
+```{r, fig.align='center', out.height=300}
+ggplot(datos, aes(resid)) +
+  geom_freqpoly(binwidth = 500, colour = "#0B4C6B") +
+  labs(
+    title = "Distribución de los residuos",
+    x = "Residuo",
+    y = "Frecuencia"
+  ) +
+  theme_minimal(base_size = 14) + 
+  xlim(-7000,7000)
+```
+
+
+## Residuos vs. Ingreso
+
+```{r, fig.align='center', out.height=300}
+ggplot(datos, aes(x = ingreso, y = resid)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey40") +
+  geom_point(color = "#0B4C6B", alpha = 0.8) +
+  labs(
+    title = "Residuos vs. Ingreso",
+    x = "Ingreso",
+    y = "Residuo"
+  ) +
+  theme_minimal(base_size = 14) +
+   xlim(0 , 50000) + ylim(-20000,20000)
+```
+
+## Conclusión
+
+* Las **predicciones** muestran qué patrón captura el modelo.
+
+* Los **residuos** revelan lo que el modelo ignora.
+
+* Residuos distribuidos aleatoriamente alrededor de cero indican un buen ajuste.
+
+## Variables categóricas en modelos lineales
+
+- Cuando el predictor es **categórico**, no tiene sentido multiplicar como en variables numéricas.  
+
+- Por ejemplo, para la fórmula `y ~ sexo` donde `sexo` puede ser `Hombre` o `Mujer`, R crea columnas dummy:
+
+```{r}
+model_matrix(datos, gasto ~ sexo) %>% 
+  head()
+```
+
+:::{.callout-important}
+
+### Importante
+R genera solo **una columna dummy por categoría menos una** para evitar colinealidad:
+  `sexoMujer = 0` si hombre, `1` si mujer.
+:::
+
+## Ejemplo
+
+```{r, echo=TRUE, fig.align='center', out.height=250}
+library(scales)
+library(haven)
+datos2 <- datos %>% 
+  mutate(niveduc = as.character(niveduc_ee), 
+         niveduc_labels = as_factor(niveduc_ee)) %>% 
+  filter(!is.na(niveduc)) %>% ungroup()
+datos2 %>% 
+  distinct(niveduc_labels,niveduc) %>% arrange(niveduc)
+```
+
+## Visualización del los datos
+
+```{r  fig.align='center', out.height=250}
+ggplot(datos2) +
+  geom_point(aes(x = niveduc , y = gasto)) +
+  labs(title = "Variable categórica", x = "Nivel educativo", y = "Gastos") +
+  scale_y_continuous(labels = label_number(accuracy = 1, big.mark = ",")) +
+  theme_minimal(base_size = 14)
+```
+
+
+
+## Ajustar un modelo lineal:
+
+```{r, echo=TRUE}
+mod2 <- lm(gasto ~ niveduc, data = datos2)
+
+tidy(mod2)
+```
+
+## Generar predicciones
+
+```{r  echo=TRUE}
+datos2 <- datos2 %>%
+  add_predictions(mod2, var = "y_pred")
+datos2 %>% distinct(niveduc_labels, 
+                  niveduc, y_pred)  %>%  head() 
+```
+
+
+* El modelo predice el valor medio de $y$ para cada categoría de $x$.
+* No se pueden hacer predicciones para niveles **no observados**:
+
+## Predicciones por categoría
+
+```{r  echo=TRUE}
+datos2 %>% add_residuals(mod2, var = "residual") %>%
+  distinct(niveduc_labels, niveduc, 
+         y_pred, residual) %>%  head()
+```
+
+
+## Visualización de predicciones por categoría
+
+```{r, fig.align='center', out.height=250}
+ggplot(datos2, aes(niveduc)) +
+  geom_point(aes(y = gasto), colour = "#0B4C6B", size = 2) +
+  geom_point( aes(y = y_pred), colour = "red", size = 4) +
+   labs(title = "Variable categórica x", x = "Nivel educativo", y = "Gastos") +
+  scale_y_continuous(labels = label_number(accuracy = 1, big.mark = ",")) +
+  theme_minimal(base_size = 14)
+```
+
+
+## Interacciones (continuas y categóricas)
+
+Cuando combinamos una **variable continua** con una **variable categórica**, la relación entre la variable continua y la respuesta puede **cambiar entre categorías**.
+
+Para ilustrarlo, usamos el conjunto de datos `datos2`, que contiene:
+
+* `x1`: predictor continuo (ingreso)
+* `x2`: predictor categórico (nivel educativo)
+
+```{r, fig.align='center', out.height = 150}
+nivedu_colors <- c(
+  "1" = "#4E79A7",  # Azul suave
+  "2" = "#F28E2B",  # Naranja pastel
+  "3" = "#E15759",  # Rojo suave
+  "4" = "#76B7B2",  # Verde-azulado pastel
+  "5" = "#59A14F",  # Verde natural
+  "6" = "#EDC949",  # Amarillo suave
+  "7" = "#AF7AA1"   # Púrpura pastel
+)
+
+ggplot(datos2, aes(x = ingreso, y = gasto)) +
+  geom_point(aes(colour = niveduc), size = 2) +
+  # Usar la paleta de colores institucional
+  scale_colour_manual(values = nivedu_colors) +
+  labs(x = "Ingreso (x1)", y = "Gastos (y)", 
+       colour = "Nivel Edu. (x2)") +
+  theme_minimal(base_size = 18) +
+  xlim(0 , 50000)+ ylim(0 , 50000)
+```
+
+## Dos modelos posibles (I)
+
+Ajustamos dos modelos lineales:
+
+  * `y ~ x1 + x2`: modelo **aditivo**, sin interacción.
+
+```{r, echo=TRUE}
+mod3 <- lm(gasto ~ ingreso + niveduc, data = datos2)
+tidy(mod3)
+```
+
+## Dos modelos posibles (II)
+
+`y ~ x1 * x2`: modelo con **interacción**, equivalente a
+    $$y = a_0 + a_1 x_1 + a_2 x_2 + a_{12} (x_1 \times x_2)$$
+
+
+```{r, echo=TRUE}
+mod4 <- lm(gasto ~ ingreso * niveduc, data = datos2)
+```
+
+\small
+```{r, echo=FALSE}
+tidy(mod4)
+```
+
+
+## Generación de predicciones
+
+Para visualizar ambos modelos, necesitamos generar una cuadrícula con todas las combinaciones de `x1` y `x2`:
+
+```{r, echo=TRUE}
+datos3 <- datos2 %>% 
+  select(gasto, ingreso, niveduc_labels , niveduc) %>%
+  gather_predictions(mod3, mod4)
+
+head(datos3, 5)
+```
+
+
+## Visualización comparativa
+
+Podemos representar los resultados de ambos modelos con facetas:
+
+```{r, fig.align='center', out.height = 250}
+# Gráfico de líneas de predicción
+ggplot(datos3,
+       aes(
+         x = ingreso,
+         y = pred,
+         colour = niveduc,
+         group = interaction(model, niveduc)
+       )) +
+  geom_point(data = datos3, aes(x = ingreso,
+         y = gasto,
+         colour = niveduc), alpha = 0.6) +
+  geom_line(linewidth = 1.2) +
+  facet_wrap( ~ model) +
+  scale_colour_manual(values = nivedu_colors) +
+  labs(x = "Ingreso", y = "Gastos") +
+  theme_minimal(base_size = 18) +
+  xlim(0, 50000) +
+  ylim(0, 50000)
+
+```
+
+## Interpretación gráfica
+
+* En el modelo **aditivo (`+`)**:
+
+  * Misma pendiente para todas las categorías.
+
+  * Diferentes interceptos.
+
+* En el modelo **con interacción (`*`)**:
+
+  * Tanto la pendiente como el intercepto varían según `x2`.
+
+
+## Evaluación del ajuste
+
+Para evaluar cuál modelo describe mejor los datos, analizamos los residuos:
+
+```{r, fig.align='center', out.height = 250}
+datos3 <- datos2 %>% 
+  select(gasto, ingreso, niveduc_labels , niveduc) %>%
+  gather_residuals(mod3, mod4)
+
+
+ggplot(datos3, aes(x = ingreso, y = resid, colour = niveduc)) +
+  geom_point(alpha = 0.7) +
+  facet_grid(model ~ niveduc, scales = "free") +
+  # Usar la paleta de colores institucional
+  scale_colour_manual(values = nivedu_colors) +
+  labs(title = "Análisis de residuos por modelo y nivel de x2", x = "Ingreso", y = "Residuo") +
+  theme_minimal(base_size = 18) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  # Línea de referencia en cero, color gris claro
+  geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    color = "#A9A9A9",
+    linewidth = 0.8
+  )
+```
+
+
+## Observaciones 
+
+  * El modelo con interacción permite capturar **cambios en la pendiente** según el nivel de la variable categórica.
+  
+  * Aunque una comparación formal requiere herramientas estadísticas adicionales, el **análisis visual** de las pendientes y los residuos es suficiente para identificar mejoras sustanciales en el ajuste.
+
+
+  *  **Las interacciones revelan cómo el efecto de una variable depende del valor de otra.**
+
+  *  Ignorarlas puede llevar a interpretaciones engañosas, especialmente cuando las relaciones cambian entre grupos.
+
+
+## Transformaciones dentro de la fórmula
+
+Puedes hacer transformaciones directamente en `lm()`:
+
+```{r, eval=FALSE, echo=TRUE}
+lm(log(y) ~ sqrt(x1) + x2)
+```
+
+Esto es equivalente a:
+
+$$
+\log(y) = a_1 + a_2 \cdot \sqrt{x_1} + a_3 \cdot x_2
+$$
+
+Si la transformación involucra `+`, `*`, `^` o `-`, usa `I()` para que R la interprete correctamente:
+
+```{r, eval=FALSE, echo=TRUE}
+lm(y ~ x + I(x^2))
+```
+
+:::{.callout-important}
+### Importante
+Evita errores: `y ~ x ^ 2 + x` se traduce en interacción de `x` consigo mismo, lo que R simplifica automáticamente a `y ~ x`.
+:::
+
+## Verificación con `model_matrix()`
+
+```{r, echo=TRUE}
+df <- tribble(~y, ~x, 1, 1, 2, 2, 3, 3)
+model_matrix(df, y ~ x^2 + x)
+model_matrix(df, y ~ I(x^2) + x)
+```
+
+`model_matrix()` permite ver **exactamente qué está ajustando `lm()`**.
+
+
+## Aproximación polinomial
+
+El teorema de Taylor permite aproximar funciones suaves con polinomios:
+
+```{r, echo=TRUE}
+model_matrix(df, y ~ poly(x, 2))
+```
+
+Fuera del rango de los datos, los polinomios pueden **explotar rápidamente**.
+
+
+## Alternativa: splines naturales
+
+```{r, echo=TRUE}
+library(splines)
+model_matrix(df, y ~ ns(x, 2))
+```
+
+* `ns(x, df)` genera splines naturales con `df` grados de libertad
+* Mantiene estabilidad fuera del rango de los datos
+
+
+## Ejemplo práctico
+
+```{r, echo=TRUE}
+sim5 <- tibble(
+  x = seq(0, 3.5 * pi, length = 50),
+  y = 4 * sin(x) + rnorm(length(x))
+)
+```
+
+```{r, fig.align='center', out.height = 250}
+ggplot(sim5, aes(x, y)) +
+  geom_point() + theme_minimal(base_size = 18)
+```
+
+
+
+## Ajuste de múltiples modelos con splines
+
+```{r, echo=TRUE}
+mod1 <- lm(y ~ splines::ns(x, 1), data = sim5)
+mod2 <- lm(y ~ splines::ns(x, 2), data = sim5)
+mod3 <- lm(y ~ splines::ns(x, 3), data = sim5)
+mod4 <- lm(y ~ splines::ns(x, 4), data = sim5)
+mod5 <- lm(y ~ splines::ns(x, 5), data = sim5)
+
+grid <- sim5 %>%
+  data_grid(x = seq_range(x, n = 50, expand = 0.1)) %>%
+  gather_predictions(mod1, mod2, mod3, mod4, mod5, .pred = "y")
+```
+
+
+
+## Visualización comparativa
+
+```{r, fig.align='center', out.height = 300}
+ggplot(sim5, aes(x, y)) +
+  geom_point() +
+  geom_line(data = grid, colour = "red") +
+  facet_wrap(~model) +
+  labs(title = "Ajuste de modelos spline con distintos grados de libertad") + theme_minimal(base_size = 18)
+```
+
+
+
+## Observaciones
+
+* La extrapolación fuera del rango de los datos es peligrosa
+
+* Los modelos nunca dicen si el comportamiento es verdadero fuera del rango observado
+
+
+## Valores faltantes
+
+Los valores faltantes no aportan información sobre la relación entre variables. Por defecto, `lm()` **elimina filas con NA** de manera silenciosa.
+
+```{r echo=TRUE}
+library(tidyverse)
+df <- tribble(  ~x, ~y, 1, 2.2,
+  2, NA,  3, 3.5, 4, 8.3, NA, 10
+)
+df
+```
+
+## Valores faltantes
+
+Para suprimir los mensajes de advertencia:
+
+```{r, eval=TRUE, echo=TRUE}
+mod <- lm(y ~ x, data = df, na.action = na.exclude)
+```
+
+Podemos consultar cuántas observaciones se usaron:
+
+```{r, eval=TRUE, echo=TRUE}
+nobs(mod)
+```
+
+:::{.callout-tip}
+
+### Tip:
+Ajustar `options(na.action = na.warn)` permite que R nos notifique automáticamente sobre la eliminación de filas con valores faltantes.
+:::
+
+## Otros modelos
+
+Hasta ahora nos centramos en **modelos lineales**, que suponen:
+
+* Relación lineal: $y = a_1 x_1 + a_2 x_2 + \dots + a_n x_n$
+
+* Residuos normalmente distribuidos
+
+## Extensiones de modelos 
+
+* Modelos lineales generalizados
+
+  * Permiten *respuestas no continuas* (binarias, conteos)
+
+  * Basados en verosimilitud en lugar de solo mínimos cuadrados
+```{r, eval=FALSE, echo=TRUE}
+glm(y ~ x, family = binomial, data = df)
+```
+
+* Modelos aditivos generalizados
+
+  * Incorporan **funciones suaves arbitrarias**
+  
+  * Ajustan (y = f(x)) con restricciones de suavidad
+
+```{r, eval=FALSE, echo=TRUE}
+library(mgcv)
+gam(y ~ s(x), data = df)
+```
+
+## Extensiones de modelos 
+
+* Modelos lineales penalizados
+
+  * Penalizan coeficientes grandes para **evitar sobreajuste**
+
+  * Mejoran la **generalización** a nuevos datos
+
+```{r, eval=FALSE, echo=TRUE}
+library(glmnet)
+glmnet(x = as.matrix(df$x), y = df$y)
+```
+
+* Modelos robustos
+
+  * Menos sensibles a **valores extremos**
+  
+  * Útiles cuando hay outliers, pero no siempre necesarios
+
+```{r, eval=FALSE, echo=TRUE}
+library(MASS)
+rlm(y ~ x, data = df)
+```
