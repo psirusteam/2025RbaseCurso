@@ -1,0 +1,144 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 1"
+subtitle: "Clase 3: R como calculadora"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+# Introducción
+
+Antes de adentrarnos en el análisis de datos, es fundamental comprender cómo funciona R como lenguaje numérico.  
+R fue diseñado inicialmente por **Ross Ihaka y Robert Gentleman (1996)** en la Universidad de Auckland como un entorno para el **cálculo estadístico y la exploración de datos**, inspirado en el lenguaje S. 
+
+# Introducción
+
+Desde entonces, su fortaleza radica en que combina la **precisión matemática** de una calculadora científica con la **flexibilidad de un lenguaje de programación reproducible**.
+
+
+:::{.callout-tip}
+### *Ihaka & Gentleman (1996), “R: A Language for Data Analysis and Graphics”:*
+“R es tanto un lenguaje como un entorno; permite realizar desde cálculos simples hasta análisis estadísticos complejos con el mismo nivel de control y transparencia.” 
+:::
+
+# R como calculadora básica 
+
+R puede ejecutar operaciones matemáticas directamente, sin necesidad de funciones adicionales.  
+Esto lo convierte en una herramienta ideal para validar resultados y explorar conceptos numéricos.
+
+```{r, echo=TRUE, include=TRUE}
+1 + 2
+3 * 5
+(10 + 5) / 3
+```
+
+# R como calculadora básica 
+
+**Orden de operaciones**
+
+Al igual que en matemáticas, R respeta la jerarquía clásica de operaciones:
+
+Paréntesis → Potencias → Multiplicación y División → Suma y Resta
+
+```{r, echo=TRUE, include=TRUE}
+
+2 + 3 * 4 # Multiplicación antes que suma
+(2 + 3) * 4 # Paréntesis cambia el orden
+2 ^ 3 + 1 # Potencia antes que suma
+```
+
+
+# R como calculadora básica 
+
+**Operaciones comunes**
+
+| Operación      | Símbolo / Función |       Ejemplo      | 
+| -------------- | ----------------: | :----------------: | 
+| Suma           |               `+` |       `4 + 3`      | 
+| Resta          |               `-` |       `9 - 2`      |  
+| Multiplicación |               `*` |       `6 * 5`      |    
+| División       |               `/` |      `10 / 4`      |  
+| Potencia       |               `^` |       `2 ^ 3`      |   
+| Raíz cuadrada  |          `sqrt()` |     `sqrt(16)`     |    
+| Valor absoluto |           `abs()` |      `abs(-9)`     |  
+| Redondear      |         `round()` | `round(3.1416, 2)` |    
+
+# R como calculadora básica 
+
+**Funciones matemáticas más usadas**
+
+R incluye funciones matemáticas avanzadas listas para usar:
+
+```{r, echo=TRUE, include=TRUE}
+log(10) # Logaritmo natural (base e)
+log10(1000) # Logaritmo base 10
+exp(2) # Exponencial (e^2)
+```
+
+# R como calculadora básica 
+
+**Funciones matemáticas más usadas**
+
+```{r, echo=TRUE, include=TRUE}
+sin(pi/2) # Seno de 90 grados (en radianes)
+cos(pi) # Coseno de 180 grados
+tan(pi/4) # Tangente de 45 grados
+```
+# Uso de variables
+
+Una de las mayores ventajas de R frente a una calculadora tradicional es la capacidad de almacenar resultados.
+Esto se logra mediante el operador de asignación <-, que permite crear objetos.
+
+```{r, echo=TRUE, include=TRUE}
+x <- 3 * 4
+x
+resultado <- (59 + 73 + 2) / 3
+resultado
+```
+
+# Uso de variables
+
+R recuerda el valor y puede reutilizarlo en cálculos posteriores:
+
+```{r, echo=TRUE, include=TRUE}
+
+resultado +10
+```
+
+# Cálculos combinados
+
+Podemos combinar operaciones y funciones para resolver expresiones más complejas:
+
+```{r, echo=TRUE, include=TRUE}
+x <- 4
+y <- 9
+resultado <- sqrt(x^2 + y^2)
+resultado
+```
+
+# Errores frecuentes
+
+| Error común                                          | Causa                                   | Ejemplo incorrecto |
+| ---------------------------------------------------- | --------------------------------------- | ------------------ |
+| Uso de `=` en lugar de `<-`                          | Confusión con el operador de asignación | `x = 5`            |
+| Paréntesis abiertos sin cerrar                       | Error de sintaxis                       | `sqrt(9`           |
+| Uso de coma `,` en lugar de punto `.` para decimales | Diferencia cultural                     | `3,14`             |
+
+R detiene la ejecución y muestra un mensaje de error que ayuda a identificar el problema.

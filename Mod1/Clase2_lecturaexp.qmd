@@ -1,0 +1,205 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 1"
+subtitle: "Clase 2: Lecturas y exportación de bases de datos - librerías - objetos de R"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Carga e importación de librerias
+
+Antes de trabajar con datos en R, es necesario cargar las librerías, que son conjuntos de
+funciones ya creadas que nos facilitan el análisis.
+
+-   Instalar una librería (install.packages()) se hace solo una vez.
+
+-   Cargarla (library()) se debe hacer cada vez que abrimos R o RStudio.
+
+-   Algunas librerías importantes para análisis de datos son: tidyverse, dplyr, ggplot2,
+    readr, readxl, entre otras.
+
+# Carga e importación de librerias
+
+```{r, echo=TRUE}
+# Instalar (solo la primera vez):
+# install.packages("tidyverse")
+
+library(tidyverse)   # Incluye dplyr, ggplot2, readr, etc.
+
+```
+
+¿Por qué es importante?
+
+Porque sin cargar las librerías, R no reconoce funciones como filter(), ggplot(),
+read_csv(), etc.
+
+# Carga e importación de base de datos
+
+Antes de analizar, debemos importar o leer los datos y traerlos a R. Esto significa que R
+toma la información que está guardada en un archivo externo (como Excel, CSV, RDS, SPSS,
+etc.) y la convierte en un objeto dentro del entorno de trabajo.
+
+Una vez los datos están cargados en un objeto (por ejemplo, un data frame llamado datos),
+podemos visualizarlos, limpiarlos, transformarlos, hacer gráficos o aplicar modelos
+estadísticos. Es decir, importar los datos es el paso que conecta la información real con
+el análisis que haremos en R.
+
+# Carga e importación de base de datos
+
+## **Formatps más comunes**
+
+| **Tipo de archivo** | **Librería** |  **Ejemplo en R** |
+|-------------------|-------------------|----------------------------------|
+| CSV | readr |  `datos <- read_csv("data/archivo.csv")` |
+| Texto delimitado “;” | readr |  `datos <- read_delim("data/archivo.txt", delim = ";")` |
+| Texto delimitado tab | readr |  `datos <- read_tsv("data/archivo.tsv")` |
+| Excel (.xlsx) | readxl |  `datos <- read_excel("data/datos.xlsx")` |
+| RDS (.rds) | Base de R |  `datos <- readRDS("data/base.rds")` |
+| RData (.RData) | Base de R |  `load("data/mi_objeto.RData")` |
+
+# Carga e importación de base de datos
+
+## **Otros formatos**
+
+| **Tipo de archivo** | **Librería** **Ejemplo en R** |
+|-------------------|-------------------|----------------------------------|
+| SPSS (.sav) | haven | `datos <- read_sav("data/archivo.sav")` |
+| Stata (.dta) | haven |  `datos <- read_dta("data/archivo.dta")` |
+| JSON | jsonlite |  `datos <- fromJSON("data/archivo.json")` |
+| CSV grande (.csv.gz) | data.table |  `datos <- fread("data/archivo.csv.gz")` |
+
+# Carga e importación de base de datos
+
+-   Ejemplo: cargar un archivo RDS (.rds)
+
+```{r, echo=TRUE}
+# Importar la base (ejemplo)
+datos <- readRDS(
+  "../Data/base_personas.rds"
+) %>% as.data.frame() # readdRDS es una funcion base de R
+# Ver las primeras filas
+head(datos[, 1:8], 3)
+
+```
+
+# Objetos de R
+
+## **Clases de objetos**
+
+En R, los datos no se guardan de forma suelta, sino dentro de objetos. Estos objetos
+pueden tener diferentes estructuras o “clases”, y conocerlas es clave para trabajar
+correctamente.
+
+# Objetos de R
+
+## **Clases de objetos**
+
+| **Tipo de objeto** | **Descripción**                                                        |
+|-----------------------------------------------|-------------------------------------------|
+| **Vector**         | Conjunto básico de valores del mismo tipo.                             |
+| **Factor**         | Vector para datos categóricos con niveles definidos.                   |
+| **Matrix**         | Arreglo rectangular de datos numéricos o de un solo tipo.              |
+| **Array**          | Extiende la idea de matriz a más de dos dimensiones.                   |
+| **Data Frame**     | Tabla similar a Excel; cada columna puede tener distinto tipo de dato. |
+| **Tibble**         | Versión moderna del data frame (tidyverse), más ordenada y amigable.   |
+| **List**           | Contenedor que puede almacenar objetos de cualquier tipo y tamaño.     |
+
+# Objetos de R
+
+## **Clases de objetos: Vector**
+
+```{r, echo=TRUE, include=TRUE}
+# Vector numérico
+edades <- c(25, 30, 28, 40)
+edades
+
+# Vector de texto (character)
+nombres <- c("Ana", "Luis", "María")
+nombres
+
+# Vector lógico (TRUE / FALSE)
+es_mayor_edad <- c(TRUE, TRUE, FALSE, TRUE)
+es_mayor_edad
+```
+
+# Objetos de R
+
+## **Clases de objetos: Factor**
+
+```{r, echo=TRUE, include=TRUE}
+sexo <- factor(c("Mujer", "Hombre", "Mujer", "Hombre"))
+levels(sexo)       # Niveles del factor
+class(sexo)        # "factor"
+```
+
+# Objetos de R
+
+## **Clases de objetos: Matriz**
+
+```{r, echo=TRUE, include=TRUE}
+matriz_ejemplo <- matrix(1:9, nrow = 3, ncol = 3)
+matriz_ejemplo
+```
+
+# Objetos de R
+
+**Clases de objetos: Data Frame**
+
+```{r, echo=TRUE, include=TRUE}
+personas <- data.frame(
+  nombre = c("Ana", "Luis", "María"),
+  edad   = c(23, 30, 28),
+  ingreso = c(1200, 1500, 1800)
+)
+
+personas
+class(personas)  # "data.frame"
+```
+
+# Objetos de R
+
+**Clases de objetos: Tibble**
+
+```{r, echo=TRUE, include=TRUE}
+personas_tibble <- tibble(
+  nombre = c("Ana", "Luis", "María"),
+  edad   = c(23, 30, 28),
+  ingreso = c(1200, 1500, 1800)
+)
+personas_tibble
+```
+
+# Objetos de R
+
+**Clases de objetos: Lista**
+
+```{r, echo=TRUE, include=TRUE}
+mi_lista <- list(
+  numeros = c(1, 2, 3),
+  tabla = personas
+)
+
+mi_lista
+```
