@@ -1,0 +1,233 @@
+---
+title: "Módulo 2 — Tidyverse I"
+subtitle: "select() y filter()"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    slide-number: true
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+    #css: styles.css
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE
+)
+library(printr)
+
+```
+
+
+# Introducción
+
+## Enfoque de esta sección
+
+- Manipulación de datos con `dplyr`.
+
+- Uso de **`select()`** para elegir variables.  
+
+- Uso de **`filter()`** para seleccionar observaciones.  
+
+- Ambas funciones se combinan frecuentemente con el operador `%>%`.
+
+
+# Lectura de base de ejemplos 
+
+```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+datos <- readRDS("data/base_personas_gasto.rds")
+library(dplyr)
+glimpse(datos)
+```
+
+# `select()`
+
+## ¿Para qué sirve?
+
+Permite **seleccionar columnas** (variables) de un conjunto de datos.
+
+```{r echo=TRUE}
+temp <- select(datos, sexo, parentesco, edad)
+head(temp)
+```
+
+Devuelve solo las variables indicadas.
+
+
+# Selección por posición
+
+```{r, echo=TRUE}
+temp <- select(datos, 1:3)  
+head(temp)
+```
+
+# Selección por rango
+```{r, echo=TRUE}
+temp <-  select(datos, parentesco:anoest) 
+head(temp, 10)
+```
+
+# Selección por exclusión
+
+```{r, echo=TRUE}
+temp <-  select(datos,-c("id_hogar",  "id_pers","upm",  "estrato",
+                  "area", "fep",  "pobreza",
+                  "ingreso_hh","gasto_hh")) # excluye variables
+head(temp, 5)
+```
+
+`select()` acepta rangos y exclusiones, lo que permite construir subconjuntos rápidamente.
+
+
+# Selectores auxiliares
+
+```r
+select(datos,
+       starts_with("e"),   # variables que inician con "e"
+       ends_with("o"),     # variables que terminan con "o"
+       contains("ed"),     # variables que contienen "ed"
+       everything())       # todas las variables
+```
+
+> Los **selectores** permiten patrones más flexibles, útiles con grandes bases.
+
+# Selectores auxiliares: variables que inician con "e"
+
+```{r, echo=TRUE}
+select(datos, starts_with("e")) %>% head()    
+```
+
+# Selectores auxiliares: variables que terminan con "o"
+
+
+```{r, echo=TRUE}
+select(datos, ends_with("o")) %>% head()    
+```
+
+# Selectores auxiliares: variables que contienen "ed"
+
+```{r, echo=TRUE}
+select(datos, contains("ed")) %>% head()    
+```
+
+
+
+# Renombrar variables al seleccionar
+
+Puedes renombrar variables dentro de `select()`, sin usar `rename()` aparte.
+
+```{r, echo= TRUE }
+select(datos,
+       Nivel_Educativo = niveduc_ee,
+       Años_estudio = anoest,
+       Sexo = sexo
+       ) %>% 
+       head()
+```
+
+
+
+
+# `filter()` 
+
+## ¿Para qué sirve?
+
+> Selecciona **filas (observaciones)** que cumplen condiciones lógicas.
+
+```{r, echo=TRUE, eval=FALSE}
+filter(datos, parentesco == 1) %>% head()
+```
+\tiny
+
+```{r, echo=FALSE, eval=TRUE}
+filter(datos, parentesco == 1) %>% head(10)
+```
+\normalsize 
+Devuelve solo los jefes de hogar.
+
+---
+
+## Condiciones múltiples
+
+```{r, eval=TRUE}
+filter(datos, parentesco == 1, ingreso > 7100) %>%
+  select(id_hogar, parentesco, 
+         ingreso, sexo) %>% head(10)
+```
+
+
+# Operadores lógicos más usados
+
+| Operador    | Significado               | Ejemplo           |                       |
+| ----------- | ------------------------- | ----------------- | --------------------- |
+| `==`        | Igual                     | `parentesco == 1`        |                       |
+| `!=`        | Diferente                 | `pobreza != 3`       |                       |
+| `>` / `<`   | Mayor / Menor             | `edad > 17`        |                       |
+| `>=` / `<=` | Mayor/igual / Menor/igual | `anoest >= 12`       |                       |
+| `%in%`      | Pertenencia               | `edad %in% c(1:10)` |                       |
+| `&` / `|`   | Y / O lógicos     | `edad > 17 & anoest > 20` |
+
+
+# Uso de operadores de pertenencia
+
+```{r, eval=TRUE}
+datos %>%  filter(edad %in% c(1:10)) %>% 
+  select(id_hogar, parentesco, ingreso, sexo, edad) %>% 
+  head()
+```
+
+Filtra solo las observaciones con edad de 1 a 10 años.
+
+# Flujo de trabajo visual
+
+1. `select()` → selecciona variables
+2. `filter()` → aplica condiciones⃣
+3. Resultado: subconjunto depurado y legible
+
+Piensa en estas funciones como una “lupa”: una observa **qué columnas**, la otra **qué filas**.
+
+
+# Variantes útiles
+
+## select()
+
+* `rename_with(fn, .cols)` → aplicar función a nombres
+* `relocate(col, .before/.after)` → cambiar orden de columnas
+
+## filter()
+
+* `filter(.data, between(var, a, b))`
+* `filter(.data, near(var, value, tol))`
+
+```r
+filter(datos, between(edad, 1, 10))
+```
+---
+
+# En resumen
+
+| Función    | Actúa sobre | Objetivo principal                    | Ejemplo                    |
+| ---------- | ----------- | ------------------------------------- | -------------------------- |
+| `select()` | Columnas    | Reducir o reorganizar variables       | `select(datos, edad, sexo)` |
+| `filter()` | Filas       | Seleccionar observaciones específicas | `filter(datos, edad >= 18)` |
+
+Combinadas, son la base de todo flujo de transformación en el tidyverse.
+

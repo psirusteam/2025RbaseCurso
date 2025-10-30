@@ -1,0 +1,172 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 1"
+subtitle: "Clase 4: Descripción de los datos"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+La descripción de los datos es el primer paso del análisis estadístico. Permite conocer la estructura, distribución y calidad de la información, identificando patrones, valores atípicos y posibles errores.
+
+:::{.callout-tip}
+### *Como señaló Tukey (1977)*
+“la exploración de los datos busca descubrir lo que los datos pueden decirnos por sí mismos” 
+:::
+
+# Tipos de datos en R
+
+Los datos en R pueden adoptar diferentes **tipos o clases**, según su naturaleza y propósito analítico.
+
+
+
+| **Tipo de dato** | **¿Qué representa?**                          |
+|------------------|-----------------------------------------------|
+| `numeric`        | Números decimales o enteros                   |
+| `integer`        | Números enteros declarados explícitamente     |
+| `character`      | Texto: palabras, nombres, frases              |
+| `logical`        | Valores lógicos: verdadero o falso            |
+| `factor`         | Categorías o niveles (variables cualitativas) |
+| `Date`           | Fechas en formato calendario                  |
+
+# Tipos de datos en R
+
+```{r, echo=TRUE, include=TRUE}
+# Numeric (numérico)
+x_num <- 12.5
+class(x_num)
+
+# Integer (entero)
+x_int <- 7
+class(x_int)
+
+```
+
+# Tipos de datos en R
+
+```{r, echo=TRUE, include=TRUE}
+
+# Character (texto)
+x_char <- "Bogotá"
+class(x_char)
+
+# Logical (lógico)
+x_log <- TRUE
+class(x_log)
+```
+
+# Tipos de datos en R
+
+```{r, echo=TRUE, include=TRUE}
+# Factor (categorías)
+x_fac <- factor(c("Primaria", "Secundaria", "Universitaria"))
+class(x_fac)
+levels(x_fac)
+
+# Date (fecha)
+x_date <- as.Date("2025-10-21")
+class(x_date)
+```
+
+# Ejemplo práctico
+
+Construimos un data frame que combina distintos tipos de datos (numéricos, categóricos y de texto) para ilustrar cómo R maneja cada uno de ellos.
+
+```{r, echo=TRUE, include=TRUE}
+datos <- data.frame(
+  edad = c(23, 30, 27, 45, 50),
+  sexo = factor(c("Mujer", "Hombre", "Mujer", "Hombre", "Mujer")),
+  ingreso = c(2000, 3500, 2800, 5000, 4200)
+)
+
+str(datos)     # Estructura del conjunto de datos
+```
+
+# Exploración inicial de los datos
+
+```{r, echo=TRUE, include=TRUE}
+summary(datos) # Resumen estadístico general
+```
+
+:::{.callout-note}
+Interpretación:
+
+Para variables numéricas: muestra mínimo, máximo, media, mediana y cuartiles.
+
+Para factores: muestra la frecuencia de cada categoría.
+:::
+
+# Estadísticos descriptivos básicos
+
+```{r, echo=TRUE, include=TRUE}
+mean(datos$edad) # Promedio
+median(datos$edad) # Mediana
+sd(datos$edad) # Desviación estándar
+```
+
+# Estadísticos descriptivos básicos
+
+```{r, echo=TRUE, include=TRUE}
+var(datos$edad) # Varianza
+range(datos$edad) # Rango (mínimo y máximo)
+```
+:::{.callout-tip}
+Antes de calcular medidas descriptivas, verifica que las variables sean del tipo correcto.
+Si una variable numérica aparece como texto, usa as.numeric().
+:::
+
+# Tablas de frecuencia y proporciones
+
+Las tablas permiten observar la distribución de categorías en variables cualitativas.
+
+
+```{r, echo=TRUE, include=TRUE}
+table(datos$sexo)             # Frecuencia absoluta
+prop.table(table(datos$sexo)) # Frecuencia relativa (%)
+```
+
+# Visualización básica
+
+Una forma rápida de comprender los datos es mediante representaciones gráficas simples.
+
+```{r, echo=TRUE, include=TRUE,  fig.height=3, fig.width=5}
+hist(datos$edad, main = "Distribución de la edad",
+xlab = "Edad", col = "#FEB0B7", border = "white")
+```
+
+# Visualización básica
+
+```{r, echo=TRUE, include=TRUE, fig.height=3, fig.width=5}
+boxplot(datos$ingreso, col = "#C31B83",
+main = "Dispersión del ingreso mensual",
+ylab = "Ingreso (COP)")
+```
+
+# Visualización básica
+
+:::{.callout-note}
+Los gráficos ayudan a detectar valores atípicos y patrones de distribución.
+:::

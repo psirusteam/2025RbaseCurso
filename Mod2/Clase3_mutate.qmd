@@ -1,0 +1,152 @@
+---
+title: "Módulo 2 — Tidyverse I"
+subtitle: "mutate() y transmute()"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    slide-number: true
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+    #css: styles.css
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+## 3. `mutate()` y `transmute()`
+
+
+### 🔹 Introducción
+
+Hasta ahora, hemos aprendido a **seleccionar** (`select`) y **filtrar** (`filter`) observaciones o columnas dentro de un conjunto de datos.  
+El siguiente paso en la cadena de manipulación es **transformar** o **crear** variables nuevas.
+
+Aquí entran en juego dos funciones clave del paquete **dplyr**:
+
+- `mutate()` → modifica o agrega columnas sin eliminar las existentes.  
+- `transmute()` → genera nuevas columnas, descartando las anteriores.
+
+Ambas son esenciales para construir indicadores, limpiar datos o preparar insumos para modelos estadísticos.
+
+
+---
+
+### 🔹 Objetivo
+
+Permiten **crear o transformar columnas** dentro de un `data.frame` o `tibble`.
+
+---
+
+### ⚙️ `mutate()`
+
+- Agrega **nuevas variables** o **modifica existentes**.  
+- Mantiene todas las columnas originales.  
+- Puede usar variables recién creadas dentro del mismo `mutate()`.
+
+```r
+library(dplyr)
+
+mtcars %>%
+  mutate(
+    consumo_km = mpg * 0.425,             # de millas/galón a km/litro
+    potencia_relativa = hp / max(hp)      # proporción de potencia
+  )
+```
+
+💡 *Permite encadenar transformaciones sin perder las variables originales.*
+
+---
+
+### ⚙️ `transmute()`
+
+* Similar a `mutate()`, pero **solo conserva las variables creadas**.
+* Útil para construir indicadores o reducir la salida.
+
+```r
+mtcars %>%
+  transmute(
+    consumo_km = mpg * 0.425,
+    potencia_relativa = hp / max(hp)
+  )
+```
+
+💡 *Devuelve un tibble únicamente con las nuevas variables.*
+
+---
+
+### 🧩 Uso combinado con funciones auxiliares
+
+* `if_else()` → creación condicional
+* `case_when()` → múltiples condiciones
+* `across()` → operaciones sobre grupos de columnas
+
+Ejemplo:
+
+```r
+mtcars %>%
+  mutate(
+    tipo = if_else(cyl == 4, "Eficiente", "Potente"),
+    potencia_log = log(hp)
+  )
+```
+
+---
+
+### 💡 Ejemplo práctico
+
+**Objetivo:** Crear un indicador estandarizado de eficiencia.
+
+```r
+mtcars %>%
+  mutate(
+    consumo_km = mpg * 0.425,
+    eficiencia = consumo_km / mean(consumo_km)
+  ) %>%
+  select(model = rownames(mtcars), eficiencia)
+```
+
+Resultado: tibble con índice de eficiencia relativo al promedio del conjunto.
+
+---
+
+### 🧠 Comparación resumida
+
+| Función       | Conserva columnas originales | Crea nuevas variables | Ejemplo típico               |
+| ------------- | ---------------------------- | --------------------- | ---------------------------- |
+| `mutate()`    | ✅ Sí                         | ✅ Sí                  | Añadir una columna calculada |
+| `transmute()` | ❌ No                         | ✅ Sí                  | Crear indicadores derivados  |
+
+---
+
+### 🧭 Recomendaciones de uso
+
+* Usa `mutate()` para **procesos exploratorios o pasos intermedios**.
+* Usa `transmute()` para **resultados finales o salidas resumidas**.
+* Combina con `across()` para aplicar transformaciones en bloque.
+
+```r
+mtcars %>%
+  mutate(across(starts_with("d"), scale))
+```
+
+---
+
+### 📚 Conclusión
+
+Ambas funciones son **pilares en el flujo de trabajo del `tidyverse`**.
+Facilitan la transformación progresiva y reproducible de datos,
+alineando la sintaxis con la lógica de la manipulación funcional en R.
+
+```

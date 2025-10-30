@@ -1,0 +1,220 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 1"
+subtitle: "Clase 5: Progamación básica en R: if, while, for"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+La programación es la base de la automatización en ciencia de datos.  
+En R, permite **tomar decisiones, repetir tareas y controlar el flujo lógico del análisis**, haciendo los procesos más eficientes y reproducibles.
+
+A través de estructuras como `if`, `while` y `for`, podemos enseñar al programa **qué hacer, cuándo hacerlo y cuántas veces hacerlo**.  
+Estas herramientas son esenciales para pasar de ejecutar comandos sueltos a escribir scripts dinámicos y escalables.
+
+# ¿Qué es la programación estructurada?
+
+La programación estructurada organiza el código en bloques lógicos que **siguen un flujo claro de ejecución**.  
+Este enfoque se basa en tres principios:
+
+- **Secuencia:** ejecutar instrucciones en orden.  
+- **Selección:** tomar decisiones con `if`.  
+- **Iteración:** repetir acciones con `while` o `for`.
+
+# ¿Qué es la programación estructurada?
+
+:::{.callout-note}
+### 🧭 Ejemplo de flujo lógico
+Si la base de datos tiene valores faltantes → mostrar advertencia.  
+Mientras existan valores faltantes → imputarlos.  
+Para cada variable → calcular promedio y desviación estándar.
+:::
+
+# Estructura condicional – `if` y `else`
+
+Permite **tomar decisiones** en función de una condición lógica.
+
+**Sintaxis básica**
+
+
+```{r, echo=TRUE, include=TRUE, eval=FALSE}
+
+if (condición) {
+  # código si la condición es verdadera
+} else {
+  # código si la condición es falsa
+```
+
+# Estructura condicional – `if` y `else`
+
+**Ejemplo**
+
+```{r, echo=TRUE, include=TRUE}
+
+x <- 10
+
+if (x > 5) {
+  print("x es mayor que 5")
+} else {
+  print("x es menor o igual que 5")
+}
+```
+
+# Estructura condicional – `if` y `else`
+
+:::{.callout-note}
+El bloque if evalúa una condición lógica (TRUE/FALSE).
+Si se cumple (TRUE), ejecuta el código; si no, pasa al bloque else.
+:::
+
+# Estructura repetitiva – while
+
+El bucle while ejecuta un bloque de código mientras una condición sea verdadera.
+
+```{r, echo=TRUE, include=TRUE, eval=FALSE}
+
+while (condición) {
+  # instrucciones a repetir
+}
+```
+
+# Estructura repetitiva – while
+
+**Ejemplo**
+
+```{r, echo=TRUE, include=TRUE}
+
+contador <- 1
+
+while (contador <= 5) {
+  print(paste("Iteración", contador))
+  contador <- contador + 1
+}
+```
+
+# Estructura repetitiva – while
+
+:::{.callout-warning}
+
+Si la condición nunca cambia a FALSE, el bucle se vuelve infinito.
+Siempre asegúrate de actualizar la variable dentro del while.
+:::
+
+# Estructura repetitiva – for
+
+El bucle for se usa cuando sabemos cuántas veces queremos repetir algo.
+
+**Sintaxis**
+```{r, echo=TRUE, include=TRUE, eval=FALSE}
+
+for (variable in secuencia) {
+  # código a ejecutar
+}
+```
+
+# Estructura repetitiva – for
+
+**Ejemplo**
+
+```{r, echo=TRUE, include=TRUE}
+
+for (i in 1:5) {
+  print(paste("Iteración número", i))
+}
+```
+
+# Estructura repetitiva – for
+
+:::{.callout-note}
+La variable i cambia automáticamente en cada ciclo.
+Podemos recorrer vectores, listas o secuencias numéricas.
+:::
+
+# Combinando estructuras
+
+Podemos mezclar bucles y condiciones para generar rutinas más inteligentes.
+
+```{r, echo=TRUE, include=TRUE}
+
+for (i in 1:6) {
+  if (i %% 2 == 0) {
+    print(paste(i, "es par"))
+  } else {
+    print(paste(i, "es impar"))
+  }
+}
+```
+
+Este ejemplo recorre los números del 1 al 6 e imprime si cada uno es par o impar.
+
+# Control adicional en bucles
+
+R permite controlar los bucles con dos comandos:
+
+| Comando | Descripción                     | Ejemplo             |
+| ------- | ------------------------------- | ------------------- |
+| `break` | Detiene el bucle inmediatamente | `if (i == 5) break` |
+| `next`  | Salta a la siguiente iteración  | `if (i == 3) next`  |
+
+# Control adicional en bucles
+
+**Ejemplo**
+
+```{r, echo=TRUE, include=TRUE}
+
+for (i in 1:5) {
+  if (i == 3) next
+  print(i)
+}
+```
+
+Resultado: 1, 2, 4, 5 (salta el 3).
+
+:::{.callout-note}
+Usa next para omitir casos específicos y break para detener el bucle por completo.
+:::
+
+# Ejemplo aplicado
+
+Clasificar una lista de valores según sean positivos, negativos o cero:
+
+
+```{r, echo=TRUE, include=TRUE}
+
+valores <- c(-3, 0, 5, -1, 2)
+
+for (v in valores) {
+  if (v > 0) {
+    print(paste(v, "es positivo"))
+  } else if (v < 0) {
+    print(paste(v, "es negativo"))
+  } else {
+    print(paste(v, "es cero"))
+  }
+}
+```
+

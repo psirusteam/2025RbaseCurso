@@ -44,13 +44,14 @@ Durante esta sesión aprenderás a:
 # Introducción
 
 ::: {.callout-tip title="💡 Consejo"}
-Una buena organización desde el inicio evita errores y facilita compartir tu trabajo con otros analistas o equipos.
+Una buena organización desde el inicio evita errores y facilita compartir tu trabajo con
+otros analistas o equipos.
 :::
 
 # ¿Qué es R y qué es RStudio?
 
 | **Elemento** | **Descripción** |
-|-------------------------|-----------------------------------------------------------------|
+|--------------------------|----------------------------------------------------------------|
 | **R** | Lenguaje de programación especializado en análisis estadístico, modelamiento, minería de datos y visualización. |
 | **RStudio** | Entorno de desarrollo (IDE) que permite escribir, ejecutar y organizar proyectos en R de forma más intuitiva. |
 | **Relación entre ambos** | R realiza los cálculos y RStudio ofrece una interfaz amigable para trabajar con ellos. |
@@ -76,15 +77,41 @@ Una buena organización desde el inicio evita errores y facilita compartir tu tr
 
 # Creación de proyectos en R
 
-Una vez se descargan e instalan R y RStudio, el paso siguiente es crear un proyecto.
-Por una cultura de buenas prácticas de programación, se recomienda crear un proyecto en el cual se concentre toda la información que se va a utilizar.
-A continuación, se muestran los pasos para crear un proyecto dentro de RStudio.
-
- **Paso 1. Abrir RStudio.**
+Una vez se descargan e instalan R y RStudio, el paso siguiente es crear un proyecto. Por
+una cultura de buenas prácticas de programación, se recomienda crear un proyecto en el
+cual se concentre toda la información que se va a utilizar.
 
 # Creación de proyectos en R
 
-**Paso 2: ir a file -> New Project**
+Organizar tu trabajo en proyectos de RStudio mejora la reproducibilidad, la limpieza del
+código y la colaboración.
+
+::: callout-tip
+Beneficios principales
+
+-   Estructura ordenada: mantiene scripts, datos y resultados en una misma carpeta.
+
+-   Rutas relativas automáticas: evita errores por rutas largas o dependientes del
+    computador.
+
+-   Reproducibilidad: facilita compartir proyectos completos con colegas o equipos.
+
+-   Integración con Git: permite control de versiones y colaboración eficiente.
+
+-   Inicio rápido: al abrir el .Rproj, R restaura el entorno, librerías y directorios.
+:::
+
+
+
+
+# Creación de proyectos en R
+
+A continuación, se muestran los pasos para crear un proyecto dentro de RStudio.
+**Paso 1. Abrir RStudio.**
+
+
+
+**Paso 2: ir a file -\> New Project**
 
 ![](../Data/img/Paso2_crearproy.jpg)
 
@@ -92,7 +119,10 @@ A continuación, se muestran los pasos para crear un proyecto dentro de RStudio.
 
 **Paso 3: Tipos de proyecto.**
 
-En este paso, RStudio ofrece distintas opciones según el tipo de trabajo que se vaya a realizar. Si ya existe un proyecto con código previo, se debe seleccionar Existing Directory. Si se desea mantener una copia de seguridad mediante Git, se usa la opción Version Control.
+En este paso, RStudio ofrece distintas opciones según el tipo de trabajo que se vaya a
+realizar. Si ya existe un proyecto con código previo, se debe seleccionar Existing
+Directory. Si se desea mantener una copia de seguridad mediante Git, se usa la opción
+Version Control.
 
 # Creación de proyectos en R
 
@@ -101,7 +131,6 @@ En este paso, RStudio ofrece distintas opciones según el tipo de trabajo que se
 Para este ejemplo se tomará New Directory
 
 ![](../Data/img/Paso3_crearproy.jpg)
-
 
 # Creación de proyectos en R
 
@@ -117,4 +146,6 @@ Para este ejemplo se tomará New Directory
 
 # Creación de proyectos en R
 
-Al crear un proyecto en RStudio, todas las rutinas y archivos quedan anclados a la carpeta del proyecto, evitando errores de ruta y facilitando la organización, la reproducibilidad y el trabajo colaborativo.
+Al crear un proyecto en RStudio, todas las rutinas y archivos quedan anclados a la carpeta
+del proyecto, evitando errores de ruta y facilitando la organización, la reproducibilidad
+y el trabajo colaborativo.

@@ -101,7 +101,7 @@ sin(pi/2) # Seno de 90 grados (en radianes)
 cos(pi) # Coseno de 180 grados
 tan(pi/4) # Tangente de 45 grados
 ```
-# Uso de variables
+# Asignación de los cálculos
 
 Una de las mayores ventajas de R frente a una calculadora tradicional es la capacidad de almacenar resultados.
 Esto se logra mediante el operador de asignación <-, que permite crear objetos.
@@ -113,7 +113,7 @@ resultado <- (59 + 73 + 2) / 3
 resultado
 ```
 
-# Uso de variables
+# Asignación de los cálculos
 
 R recuerda el valor y puede reutilizarlo en cálculos posteriores:
 
