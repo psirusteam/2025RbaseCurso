@@ -1,0 +1,275 @@
+---
+title: "Módulo 2 — Tidyverse I"
+subtitle: "group_by() y summarise()"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    slide-number: true
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+    #css: styles.css
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = FALSE
+)
+library(printr)
+
+```
+
+
+# Introducción
+
+El objetivo de esta sección es **aprender a agrupar y resumir información** usando las funciones `group_by()` y `summarise()`.
+
+Estas herramientas permiten obtener **estadísticas agregadas por categorías** o combinaciones de variables, dentro del flujo natural del *tidyverse*.
+
+
+# Lectura de base de ejemplos 
+
+```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+datos <- readRDS("data/base_personas_gasto.rds")
+library(dplyr)
+datos %>% mutate(log_ingreso = log(ingreso)  ) %>% 
+  select(id_hogar, id_pers, ingreso, log_ingreso) %>% head(4)
+```
+
+
+# Sintaxis general
+
+`group_by()` define los grupos y `summarise()` resume las variables.
+
+```r
+datos %>%
+  group_by(variable_grupo) %>%
+  summarise(
+    nueva_variable = funcion(variable_interés, na.rm = TRUE)
+  )
+```
+
+
+# Promedio del ingreso por área
+
+```{r}
+datos %>%
+  group_by(area) %>%
+  summarise(media_ingreso = mean(ingreso, na.rm = TRUE))
+```
+
+
+
+# Combinando select() y filter()
+
+Integración: selección, filtrado y resumen en una misma secuencia.
+
+```{r}
+datos %>%
+  select(area, sexo, ingreso) %>%
+  filter(ingreso > 0) %>%
+  group_by(area, sexo) %>%
+  summarise(media_ingreso = mean(ingreso), .groups = "drop")
+```
+
+
+
+# Múltiples estadísticas
+
+Se pueden generar **múltiples medidas resumen** en un solo paso.
+
+```{r}
+datos %>%
+  group_by(niveduc_ee) %>%
+  summarise(
+    media_ingreso = mean(ingreso),
+    mediana_ingreso = median(ingreso),
+    sd_ingreso = sd(ingreso) )
+```
+
+# Uso de across()
+
+Permite aplicar funciones a **varias columnas simultáneamente**.
+
+```{r}
+datos %>%
+  group_by(area) %>%
+  summarise(
+    across(c(ingreso, gasto), mean, .names = "media_{.col}")
+  )
+```
+
+
+
+# Incorporando mutate() + ifelse()
+
+Ejemplo de creación previa de una variable categórica antes del agrupamiento.
+
+```{r}
+datos %>%
+  mutate(tipo = ifelse(ingreso > 10000, "Alto", "Bajo")) %>%
+  group_by(tipo) %>%
+  summarise(media_gasto = mean(gasto))
+```
+
+
+# Agrupación tras case_when()
+
+Muestra cómo agrupar por clasificaciones múltiples.
+
+```{r}
+datos %>%
+  mutate(
+    grupo_edad = case_when(
+      edad < 18 ~ "Menor",
+      edad >= 18 & edad < 60 ~ "Adulto",
+      TRUE ~ "Mayor"
+    )
+  ) %>%
+  group_by(grupo_edad) %>%
+  summarise(media_ingreso = mean(ingreso))
+```
+
+
+# Mutate + summarise en secuencia
+
+Crea una nueva variable antes de resumir por grupo.
+
+```{r}
+datos %>%
+  filter(id_pers == 1) %>% 
+  mutate(razon_hh = gasto_hh/ingreso_hh) %>%
+  group_by(niveduc_ee) %>%
+  summarise(media_razon_hh = mean(razon_hh, na.rm = TRUE))
+```
+
+
+# Agrupaciones múltiples
+
+Agrupación cruzada entre **varias dimensiones**.
+
+```{r}
+datos %>%
+  group_by(area, sexo, etnia) %>%
+  summarise(media_ingreso = mean(ingreso), .groups = "drop")
+```
+
+
+
+# Ordenar resultados
+
+Ordena los resultados del resumen de forma descendente.
+
+```{r}
+datos %>%
+  group_by(area, etnia) %>%
+  summarise(media_ingreso = mean(ingreso), .groups = "drop") %>%
+  arrange(desc(media_ingreso))
+```
+
+
+
+
+# Crear indicadores relativos
+
+Conecta `summarise()` y `mutate()` para crear indicadores derivados.
+
+```{r}
+datos %>%
+  group_by(area) %>%
+  summarise(
+    media_ingreso = mean(ingreso),
+    media_gasto = mean(gasto)
+  ) %>%
+  mutate(relacion = media_gasto / media_ingreso)
+```
+
+
+
+# Cuantiles con across()
+
+Calcula cuantiles o medianas de múltiples variables en un solo paso.
+
+```{r}
+datos %>%
+  group_by(sexo) %>%
+  summarise(across(c(ingreso, gasto), ~ quantile(.x, 0.5)))
+```
+
+# Conteo de observaciones
+
+`n()` cuenta el número de registros por grupo.
+
+```{r}
+datos %>%
+  group_by(pobreza) %>%
+  summarise(total_hogares = n())
+```
+
+
+# Proporciones
+
+Mide la distribución relativa de cada categoría.
+
+```{r}
+datos %>%
+  group_by(sexo) %>%
+  summarise(prop = n() / nrow(datos))
+```
+
+
+
+# Dispersión por grupo
+
+Evalúa variación intra grupo.
+
+```{r}
+datos %>%
+  group_by(pobreza) %>%
+  summarise(
+    var_ingreso = var(ingreso),
+    rango_ingreso = max(ingreso) - min(ingreso)
+  )
+```
+
+
+
+# Limpieza del agrupamiento
+
+`ungroup()` elimina los grupos activos para posteriores análisis.
+
+
+```{r}
+datos %>%
+  group_by(area) %>%
+  summarise(across(c(ingreso, gasto), mean)) %>%
+  ungroup()
+```
+
+
+# Observación 
+
+| Función       | Propósito                          | Ejemplo                           |
+| ------------- | ---------------------------------- | --------------------------------- |
+| `group_by()`  | Define agrupamientos               | `group_by(area)`                  |
+| `summarise()` | Resume valores                     | `summarise(mean(ingreso))`        |
+| `mutate()`    | Crea nuevas variables              | `mutate(tipo = ifelse(...))`      |
+| `across()`    | Simplifica aplicación de funciones | `across(c(ingreso, gasto), mean)` |
+

@@ -25,13 +25,23 @@ editor_options:
 ---
 
 
-## 3. `mutate()` y `transmute()`
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = FALSE
+)
+library(printr)
+
+```
 
 
-### 🔹 Introducción
+# Introducción
 
-Hasta ahora, hemos aprendido a **seleccionar** (`select`) y **filtrar** (`filter`) observaciones o columnas dentro de un conjunto de datos.  
-El siguiente paso en la cadena de manipulación es **transformar** o **crear** variables nuevas.
+Hasta ahora, hemos aprendido a seleccionar (`select`) y filtrar (`filter`) observaciones o columnas dentro de un conjunto de datos.
+
+El siguiente paso en la cadena de manipulación es *transformar* o *crear* variables nuevas.
 
 Aquí entran en juego dos funciones clave del paquete **dplyr**:
 
@@ -41,112 +51,219 @@ Aquí entran en juego dos funciones clave del paquete **dplyr**:
 Ambas son esenciales para construir indicadores, limpiar datos o preparar insumos para modelos estadísticos.
 
 
----
-
-### 🔹 Objetivo
-
-Permiten **crear o transformar columnas** dentro de un `data.frame` o `tibble`.
-
----
-
-### ⚙️ `mutate()`
+# Verbo `mutate()`
+El verbo *mutate* permite encadenar transformaciones sin perder las variables originales.
 
 - Agrega **nuevas variables** o **modifica existentes**.  
 - Mantiene todas las columnas originales.  
 - Puede usar variables recién creadas dentro del mismo `mutate()`.
 
-```r
-library(dplyr)
+### Lectura de datos
 
-mtcars %>%
-  mutate(
-    consumo_km = mpg * 0.425,             # de millas/galón a km/litro
-    potencia_relativa = hp / max(hp)      # proporción de potencia
-  )
+```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+datos <- readRDS("data/base_personas_gasto.rds")
+library(dplyr)
 ```
 
-💡 *Permite encadenar transformaciones sin perder las variables originales.*
 
----
 
-### ⚙️ `transmute()`
+# Verbo `transmute()`
 
 * Similar a `mutate()`, pero **solo conserva las variables creadas**.
 * Útil para construir indicadores o reducir la salida.
 
-```r
-mtcars %>%
-  transmute(
-    consumo_km = mpg * 0.425,
-    potencia_relativa = hp / max(hp)
-  )
+```{r, echo=TRUE}
+datos %>% transmute(log_ingreso = log(ingreso)  ) %>% 
+  head()
+
 ```
 
-💡 *Devuelve un tibble únicamente con las nuevas variables.*
+Devuelve un tibble únicamente con las nuevas variables.
 
----
+# Crear nuevas variables con `mutate()`
 
-### 🧩 Uso combinado con funciones auxiliares
-
-* `if_else()` → creación condicional
-* `case_when()` → múltiples condiciones
-* `across()` → operaciones sobre grupos de columnas
-
-Ejemplo:
-
-```r
-mtcars %>%
+```{r, tab1, eval=FALSE}
+datos %>%
   mutate(
-    tipo = if_else(cyl == 4, "Eficiente", "Potente"),
-    potencia_log = log(hp)
-  )
-```
-
----
-
-### 💡 Ejemplo práctico
-
-**Objetivo:** Crear un indicador estandarizado de eficiencia.
-
-```r
-mtcars %>%
-  mutate(
-    consumo_km = mpg * 0.425,
-    eficiencia = consumo_km / mean(consumo_km)
+    ingreso_pc = ingreso_hh / n(),  # ingreso per cápita del hogar
+    log_ingreso = log1p(ingreso),  # log(ingreso + 1)
+    
+    # gasto relativo al ingreso del hogar
+    gasto_relativo = gasto / ingreso_hh
   ) %>%
-  select(model = rownames(mtcars), eficiencia)
+  select(id_hogar, id_pers, ingreso_pc, log_ingreso, gasto_relativo) %>% 
+  head(10)
+```
+# Resultados del `mutate()`
+
+```{r, tab1, eval=TRUE, echo=FALSE}
 ```
 
-Resultado: tibble con índice de eficiencia relativo al promedio del conjunto.
+# Crear un subconjunto reducido con el verbo `transmute()`
 
----
+```{r}
+datos %>%
+  transmute(id_hogar, id_pers,
+    log_gasto = log1p(gasto_hh),
+    eficiencia = gasto_hh / ingreso_hh
+  ) %>% head(5)
+```
 
-### 🧠 Comparación resumida
+`transmute()` **descarta** todas las columnas originales
+y **solo mantiene** las variables creadas o seleccionadas.
+
+# Integrar `select()`, `filter()` y `mutate()`
+
+```{r, tab2, eval=FALSE, echo=TRUE}
+datos %>%
+  select(area, estrato, ingreso, gasto) %>%
+  filter(ingreso > 0, gasto > 0) %>%
+  mutate(
+    log_ingreso = log(ingreso),
+    log_gasto = log(gasto),
+    gasto_rel = gasto / ingreso
+  ) %>% head()
+```
+
+Un flujo limpio: primero seleccionas → luego filtras → luego transformas.
+
+```{r, tab2, eval=TRUE, echo=FALSE}
+```
+
+# `mutate()` con `across()` para aplicar funciones a varias columnas
+
+```{r, tab3, eval=FALSE, echo=TRUE}
+datos %>%
+  mutate(across(
+    .cols = c(ingreso, gasto, ingreso_hh, gasto_hh),
+    .fns = log1p,
+    .names = "log_{.col}"
+  )) %>%
+  select(starts_with("log_")) %>% head()
+```
+
+`log1p(x)` aplica `log(1+x)` evitando errores cuando hay ceros. Es común en transformaciones de ingresos o gastos.
+
+
+## `across()` evita repetir transformaciones columna por columna.
+
+```{r, tab3, eval=TRUE, echo=FALSE}
+```
+
+
+
+# Flujo completo `mutate()` + `transmute()`
+
+```{r, tab4, eval=FALSE}
+datos %>%
+  mutate(
+    ingreso_pc = ingreso_hh / n(),
+    eficiencia = gasto_hh / ingreso_hh,
+    eficiencia_std = scale(eficiencia)
+  ) %>%
+  transmute( id_hogar, ingreso_pc,eficiencia_std
+  ) %>% head()
+```
+`mutate()` sirve para cálculos intermedios y `transmute()` para dejar solo lo final.
+
+```{r, tab4, eval=TRUE, echo=FALSE}
+```
+
+# Escalar y centrar variables económicas
+
+```{r, echo=TRUE, eval=TRUE}
+datos_mut1 <- datos %>%
+  mutate(
+    across(
+      .cols = c(ingreso, gasto, ingreso_hh, gasto_hh),
+      .fns = scale,
+      .names = "{.col}_z"
+    )
+  ) %>%
+  select(ends_with("_z")) 
+```
+
+Se crean versiones estandarizadas (media 0, varianza 1) de las variables de ingreso y gasto, tanto individuales como del hogar.
+
+# Resultado 
+```{r}
+datos_mut1 %>% head(10)
+```
+
+
+# Cuadrado y raíz cuadrada de variables continuas
+
+```{r}
+datos_mut3 <- datos %>%
+  mutate(
+    across(
+      c(edad, ingreso),
+      list(cuadrado = ~ .x^2, raiz = ~ sqrt(.x)),
+      .names = "{.fn}_{.col}"
+    )
+  ) %>%  select(edad, ingreso, matches("cuadrado|raiz")) 
+```
+
+Genera versiones cuadradas y raíces cuadradas de `edad` y `anoest`.
+Muy útil en modelos no lineales o para capturar efectos de curvatura.
+
+# Resultados 
+
+```{r}
+datos_mut3 %>% head(10)
+```
+
+
+# Redondear y categorizar numéricamente sin condicionales
+
+```{r}
+datos_mut6 <- datos %>%
+  mutate(
+    across(
+      c(ingreso, gasto),
+      list(redondeado = ~ round(.x)),
+      .names = "{.fn}_{.col}" ),
+    across(
+      c(ingreso, gasto),
+      list(
+        clasificado = ~ cut(
+          .x,
+          breaks = quantile(.x, probs = seq(0, 1, 0.25), na.rm = TRUE),
+          include.lowest = TRUE,
+          labels = c("Q1 (Bajo)", "Q2", "Q3", "Q4 (Alto)")
+        )
+      ), .names = "{.fn}_{.col}"
+    )  )  %>% select(gasto, ingreso, matches("redondeado|clasificado")) 
+
+```
+
+# Resultados 
+\small
+```{r}
+datos_mut6 %>% head(10)
+```
+
+
+# Comparación resumida
 
 | Función       | Conserva columnas originales | Crea nuevas variables | Ejemplo típico               |
 | ------------- | ---------------------------- | --------------------- | ---------------------------- |
-| `mutate()`    | ✅ Sí                         | ✅ Sí                  | Añadir una columna calculada |
-| `transmute()` | ❌ No                         | ✅ Sí                  | Crear indicadores derivados  |
+| `mutate()`    | Sí                         | Sí                  | Añadir una columna calculada |
+| `transmute()` | No                         | Sí                  | Crear indicadores derivados  |
 
----
 
-### 🧭 Recomendaciones de uso
 
-* Usa `mutate()` para **procesos exploratorios o pasos intermedios**.
-* Usa `transmute()` para **resultados finales o salidas resumidas**.
+## Recomendaciones de uso
+
+* Usa `mutate()` para *procesos exploratorios o pasos intermedios*.
+
+* Usa `transmute()` para *resultados finales o salidas resumidas*.
+
 * Combina con `across()` para aplicar transformaciones en bloque.
 
-```r
-mtcars %>%
-  mutate(across(starts_with("d"), scale))
-```
 
----
-
-### 📚 Conclusión
+# Conclusión
 
 Ambas funciones son **pilares en el flujo de trabajo del `tidyverse`**.
 Facilitan la transformación progresiva y reproducible de datos,
 alineando la sintaxis con la lógica de la manipulación funcional en R.
-
-```

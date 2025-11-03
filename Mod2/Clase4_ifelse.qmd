@@ -1,0 +1,219 @@
+---
+title: "Módulo 2 — Tidyverse I"
+subtitle: "ifelse() y case_when()"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    slide-number: true
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+    #css: styles.css
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = FALSE
+)
+library(printr)
+
+```
+
+
+# Introducción
+
+En análisis de datos, con frecuencia necesitamos crear **nuevas variables** que dependan de condiciones lógicas.  
+
+Dentro del *tidyverse*, las funciones más comunes para ello son:
+
+- **`if_else()`**: Evalúa una única condición lógica y retorna dos valores posibles (verdadero o falso).  
+
+- **`case_when()`**: Permite evaluar **múltiples condiciones** secuencialmente, devolviendo distintos valores según el caso.  
+
+Ambas funciones son compatibles con `mutate()` y permiten generar variables derivadas sin salir del flujo del *pipe* (`%>%`).
+
+
+# Lectura de datos
+
+```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+datos <- readRDS("data/base_personas_gasto.rds")
+library(dplyr)
+datos %>% mutate(log_ingreso = log(ingreso)  ) %>% 
+  select(id_hogar, id_pers, ingreso, log_ingreso) %>% head(4)
+```
+
+# Ejemplo básico con `if_else()`
+
+```{r}
+library(dplyr)
+
+datos_if <- datos %>%
+  mutate(
+    adulto = if_else(edad >= 18, "Adulto", "Menor"),
+    ingreso_cat = if_else(ingreso >= median(ingreso, na.rm = TRUE),
+                          "Alto", "Bajo")
+  ) %>%
+  select(id_hogar, edad, ingreso, adulto, ingreso_cat)
+```
+
+# Resultado
+
+```{r}
+head(datos_if, 5)
+```
+
+# `if_else()` dentro de `across()`
+
+Podemos aplicar la misma lógica a varias columnas simultáneamente.
+
+```{r}
+datos_if2 <- datos %>%
+  mutate(
+    across(
+      c(ingreso, gasto),
+      ~ if_else(.x >= median(.x, na.rm = TRUE), "Alto", "Bajo"),
+      .names = "cat_{.col}"
+    )
+  ) %>%
+  select(id_hogar, ingreso, gasto, cat_ingreso, cat_gasto)
+```
+
+# Resultado
+
+```{r}
+head(datos_if2, 5)
+```
+
+# ¿Qué hace `case_when()`?
+
+* Evalúa **múltiples condiciones** y devuelve diferentes valores según el caso.
+
+* Es más flexible que `if_else()` y facilita clasificaciones multinivel.
+
+* Se lee como una tabla de decisiones.
+
+
+# Ejemplo: clasificación por edad
+
+```{r}
+datos_case <- datos %>%
+  mutate(
+    etapa_vida = case_when(
+      edad < 13 ~ "Niñez",
+      edad >= 13 & edad < 18 ~ "Adolescencia",
+      edad >= 18 & edad < 60 ~ "Adultez",
+      edad >= 60 ~ "Vejez",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  select(id_hogar, edad, etapa_vida)
+```
+
+
+# Resultado
+
+```{r}
+head(datos_case, 5)
+```
+
+# Ejemplo: niveles educativos
+
+```{r}
+datos_case2 <- datos %>%
+  mutate(
+    niveduc_ee = haven::as_factor(niveduc_ee, levels = "values" ),
+    niveduc_ee = as.numeric(niveduc_ee),
+    nivel_edu_cat = case_when(
+      niveduc_ee <= 3 ~ "Baja",
+      niveduc_ee <= 6 ~ "Media",
+      niveduc_ee > 6  ~ "Alta",
+      TRUE ~ "No reporta"
+    )
+  ) %>%
+  select(id_hogar, niveduc_ee, nivel_edu_cat)
+```
+
+# Resultado
+
+```{r}
+head(datos_case2, 5)
+```
+
+# Integración con transformaciones previas
+
+Aquí combinamos `filter()`, `mutate()`, `round()` y condicionales.
+
+```{r}
+datos_final <- datos %>%
+  filter(edad >= 15, !is.na(ingreso)) %>%
+  mutate(
+    ingreso_mil = round(ingreso, -3),
+    gasto_mil   = round(gasto, -3),
+    situacion = case_when(
+      gasto_mil > ingreso_mil ~ "Gasta más de lo que gana",
+      gasto_mil == ingreso_mil ~ "Equilibrado",
+      gasto_mil < ingreso_mil ~ "Ahorra",
+      TRUE ~ NA_character_
+    ),
+    grupo = if_else(sexo == "Mujer" & edad >= 18,
+                    "Mujer adulta", "Otro grupo")
+  ) %>%
+  select(id_hogar, sexo, edad, ingreso_mil, gasto_mil, situacion, grupo)
+```
+
+---
+
+# Resultado
+
+```{r}
+head(datos_final, 6)
+```
+
+# Combinar `across()` con `case_when()`
+
+```{r}
+datos_multi <- datos %>%
+  mutate(
+    across(
+      c(ingreso, gasto),
+      ~ case_when(
+        .x < quantile(.x, 0.25, na.rm = TRUE) ~ "Bajo",
+        .x < quantile(.x, 0.75, na.rm = TRUE) ~ "Medio",
+        .x >= quantile(.x, 0.75, na.rm = TRUE) ~ "Alto"
+      ),
+      .names = "cuartil_{.col}"
+    )
+  ) %>%
+  select(id_hogar, ingreso, gasto, cuartil_ingreso, cuartil_gasto)
+```
+
+# Resultado
+
+```{r}
+head(datos_multi, 5)
+```
+
+
+# Observación 
+
+* `if_else()` se usa para **dos condiciones exclusivas**.
+* `case_when()` permite **clasificar múltiples casos**.
+* Ambas se integran con `mutate()` y `across()` para construir variables analíticas limpias y reproducibles.
+
