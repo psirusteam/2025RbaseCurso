@@ -1,0 +1,218 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 5"
+subtitle: "Clase 2: Inferencia para medias y diferencia de medias I"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+
+
+# Introducción
+
+En la clase anterior definimos los conceptos fundamentales de inferencia estadística.
+Hoy aplicaremos esas ideas a la estimación e inferencia para una media poblacional, utilizando ejemplos prácticos con R.
+
+:::{.callout-note}
+Aprenderemos a:
+
+Calcular intervalos de confianza para una media.
+
+Realizar pruebas de hipótesis sobre una media.
+
+Interpretar resultados de forma estadística y práctica.
+:::
+
+# Base de datos y muestra
+
+Utilizaremos nuevamente la base base_personas_gasto.rds, que contiene información sobre el ingreso y gasto de los hogares.
+
+```{r echo=TRUE}
+library(tidyverse)
+
+datos <- readRDS("../Data/base_personas_gasto.rds")
+
+set.seed(123)
+muestra <- slice_sample(datos, n = 400)
+head(muestra[, 2:8],5)
+```
+
+
+# Estimación de la media
+
+```{r echo=TRUE}
+x <- muestra$ingreso_hh
+x <- x[is.finite(x)]
+media <- mean(x)
+se <- sd(x)/sqrt(length(x))
+media; se
+```
+
+:::{.callout-note}
+Interpretación:
+La media muestral $\bar{X}$ es el mejor estimador puntual de la media poblacional $\mu$.
+El error estándar ($s/\sqrt{n}$) mide la variabilidad esperada de la media entre muestras.
+:::
+
+
+# Intervalo de confianza para la media
+
+
+```{r echo=TRUE}
+ic_95 <- c(media - 1.96 * se, media + 1.96 * se)
+ic_95
+```
+
+:::{.callout-note}
+
+Interpretación:
+“Con un 95% de confianza, la media poblacional se encuentra entre los límites del intervalo calculado.”
+:::
+
+# Visualización del IC
+
+```{r echo=TRUE}
+graf <- ggplot(as.data.frame(x), aes(x)) +
+geom_histogram(binwidth = 0.3*sd(x), fill = "gray80", color = "white") +
+geom_vline(xintercept = media, color = "blue", linewidth = 1) +
+geom_vline(xintercept = ic_95, linetype = "dashed", color = "red") +
+labs(subtitle = "Línea azul: media | Líneas rojas: IC 95%",
+x = "Ingreso del hogar", y = "Frecuencia") +
+theme_minimal(base_size = 12)
+
+```
+
+# Visualización del IC
+
+```{r echo=TRUE, warning=FALSE, out.width="75%", fig.align="center"}
+graf 
+```
+
+
+# Prueba de hipótesis para la media
+
+Queremos contrastar:
+
+$$
+\begin{aligned}
+H_0 &: \mu = 1.500.000
+H_1 &: \mu \neq 1.500.000
+\end{aligned}
+$$
+
+
+:::{.callout-tip}
+Interpretación:
+
+Si el valor-p < 0.05 → se rechaza $H_0$ (la media difiere de 1.500.000).
+
+Si el valor-p > 0.05 → no hay evidencia suficiente para rechazar $H_0$.
+:::
+
+# Prueba de hipótesis para la media
+
+Usamos la prueba t de Student:
+
+```{r echo=TRUE}
+t.test(muestra$gasto_hh, mu = 1500000)
+```
+
+# Prueba de hipótesis para la media
+
+Con un valor p menor a 2.2×10⁻¹⁶, inferior al nivel de significancia del 5% (α = 0.05), se rechaza la hipótesis nula que planteaba que el gasto promedio de los hogares es igual a 1.500.000.
+
+El promedio muestral fue de 11.655,5, con un intervalo de confianza al 95% entre 10.497,23 y 12.813,77, lo que indica que el gasto medio real difiere significativamente del valor hipotético propuesto.
+
+# Ejemplo práctico: comparación por sexo
+
+Analizamos si el gasto promedio difiere entre hombres y mujeres.
+
+```{r echo=TRUE}
+muestra %>%
+group_by(sexo) %>%
+summarise(
+media = mean(gasto_hh, na.rm = TRUE),
+sd = sd(gasto_hh, na.rm = TRUE),
+n = n()
+)
+
+```
+
+# Ejemplo práctico: comparación por sexo
+
+**Prueba de diferencia de medias (independientes)**
+
+```{r echo=TRUE}
+t.test(gasto_hh ~ sexo, data = muestra, var.equal = TRUE)
+
+```
+
+# Ejemplo práctico: comparación por sexo
+
+**Prueba de diferencia de medias (independientes)**
+
+El resultado fue t=−0.0758, con p-valor = 0.9396, superior al nivel de significancia de 0.05. Por tanto, no se rechaza la hipótesis nula, lo que indica que no existen diferencias estadísticamente significativas en el gasto promedio entre hombres y mujeres.
+El resultado fue t=−0.0758, con p-valor = 0.9396, superior al nivel de significancia de 0.05. Por tanto, no se rechaza la hipótesis nula, lo que indica que no existen diferencias estadísticamente significativas en el gasto promedio entre hombres y mujeres.
+
+# Ejemplo práctico: comparación por sexo
+
+**Visualización comparativa**
+
+```{r echo=TRUE}
+graf2 <- ggplot(muestra, aes(x = sexo, y = gasto_hh, fill = sexo)) +
+geom_boxplot(alpha = 0.7) +
+labs(title = "Comparación de gasto promedio por sexo",
+x = "Sexo", y = "Gasto del hogar") +
+theme_minimal(base_size = 12)
+
+```
+
+
+# Ejemplo práctico: comparación por sexo
+
+**Visualización comparativa**
+
+```{r echo=TRUE, warning=FALSE, out.width="75%", fig.align="center"}
+graf2 
+
+```
+
+# Conclusiones de la clase
+
+| Concepto                             | Aplicación en esta clase                       |
+| ------------------------------------ | ---------------------------------------------- |
+| **Media muestral ($\bar{X}$)**       | Estimador puntual de $\mu$                     |
+| **Error estándar ($s/\sqrt{n}$)**    | Medida de precisión del estimador              |
+| **Intervalo de confianza**           | Rango plausible para la media poblacional      |
+| **Prueba t para una media**          | Contrasta hipótesis sobre la media poblacional |
+| **Valor-p**                          | Mide la evidencia contra $H_0$                 |
+| **Comparación inicial entre grupos** | Introducción a la diferencia de medias         |
+
+:::{.callout-note}
+En resumen:
+Hoy aplicamos los fundamentos de la inferencia sobre una media.
+En la Clase 3 profundizaremos en la comparación entre dos medias y sus aplicaciones prácticas.
+:::

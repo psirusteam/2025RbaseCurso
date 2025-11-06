@@ -1,0 +1,145 @@
+## 1. Componentes principales (PCA) — 20 diapositivas
+
+**Objetivo general:** entender la reducción de dimensionalidad y cómo interpretar los componentes principales.
+
+| #  | Contenido                                                          |
+| -- | ------------------------------------------------------------------ |
+| 1  | Título y objetivos de la sección                                   |
+| 2  | Motivación: por qué reducir variables                              |
+| 3  | Concepto básico: varianza y correlación                            |
+| 4  | Intuición geométrica (ejes ortogonales)                            |
+| 5  | Requisitos del PCA (variables cuantitativas, estandarización)      |
+| 6  | Ejemplo visual con dos variables correlacionadas                   |
+| 7  | Matriz de correlaciones                                            |
+| 8  | Autovalores y autovectores: interpretación                         |
+| 9  | Criterios de selección (Kaiser, varianza acumulada)                |
+| 10 | Ejemplo en R: `prcomp()`                                           |
+| 11 | Resumen de varianza explicada (`summary(pca)`)                     |
+| 12 | Cargas factoriales (loadings)                                      |
+| 13 | Ejemplo de interpretación de componentes                           |
+| 14 | Gráfico de varianza explicada                                      |
+| 15 | Biplot con `autoplot(pca)`                                         |
+| 16 | Proyección de individuos en componentes                            |
+| 17 | Comparación PCA sobre variables estandarizadas vs sin estandarizar |
+| 18 | Aplicación: reducción de variables socioeconómicas                 |
+| 19 | Buenas prácticas y advertencias                                    |
+| 20 | Resumen conceptual y práctico                                      |
+
+---
+
+## 2. Análisis de correspondencias — 20 diapositivas
+
+**Objetivo general:** representar relaciones entre categorías de variables cualitativas.
+
+| #  | Contenido                                                          |
+| -- | ------------------------------------------------------------------ |
+| 1  | Introducción y objetivo                                            |
+| 2  | Diferencia entre PCA y correspondencias                            |
+| 3  | Tipos: simple y múltiple                                           |
+| 4  | Estructura de tabla de contingencia                                |
+| 5  | Ejemplo de tabla (sexo × etnia)                                    |
+| 6  | Concepto de perfil fila y columna                                  |
+| 7  | Inercia y contribución                                             |
+| 8  | Descomposición de inercia (análogo a varianza en PCA)              |
+| 9  | Ejemplo en R con `FactoMineR::CA()`                                |
+| 10 | Interpretación de autovalores                                      |
+| 11 | Representación gráfica de filas                                    |
+| 12 | Representación gráfica de columnas                                 |
+| 13 | Interpretación de proximidades                                     |
+| 14 | Correspondencia múltiple (ACM) con variables categóricas múltiples |
+| 15 | Ejemplo con `MCA()`                                                |
+| 16 | Selección de número de dimensiones                                 |
+| 17 | Ejemplo práctico: tipología de hogares                             |
+| 18 | Precauciones de interpretación                                     |
+| 19 | Aplicación combinada con clustering                                |
+| 20 | Síntesis de la técnica                                             |
+
+---
+
+## 3. Análisis factorial — 20 diapositivas
+
+**Objetivo general:** identificar factores latentes que explican las correlaciones entre variables.
+
+| #  | Contenido                                                           |
+| -- | ------------------------------------------------------------------- |
+| 1  | Introducción y objetivos                                            |
+| 2  | Diferencias conceptuales con PCA                                    |
+| 3  | Modelo general del análisis factorial                               |
+| 4  | Tipos de factores (comunes y únicos)                                |
+| 5  | Hipótesis básicas                                                   |
+| 6  | Matriz de correlaciones                                             |
+| 7  | Estimación de factores (método principal y máxima verosimilitud)    |
+| 8  | Ejemplo con `psych::fa()`                                           |
+| 9  | Cargas factoriales e interpretación                                 |
+| 10 | Comunalidades y unicidades                                          |
+| 11 | Rotación varimax                                                    |
+| 12 | Comparación sin rotar vs rotado                                     |
+| 13 | Interpretación de factores: ejemplo práctico                        |
+| 14 | Visualización de cargas                                             |
+| 15 | Asignación de nombres a factores                                    |
+| 16 | Validación del número de factores (criterio de Kaiser y scree plot) |
+| 17 | Aplicación: medir nivel socioeconómico                              |
+| 18 | Limitaciones y supuestos                                            |
+| 19 | Diferencias entre FA, PCA y ACM                                     |
+| 20 | Conclusiones de la sección                                          |
+
+---
+
+## 4. Clustering no jerárquico (K-means) — 20 diapositivas
+
+**Objetivo general:** agrupar observaciones en grupos homogéneos mediante algoritmos iterativos.
+
+| #  | Contenido                                               |
+| -- | ------------------------------------------------------- |
+| 1  | Introducción y objetivo                                 |
+| 2  | Concepto de “cluster”                                   |
+| 3  | Diferencias entre clustering jerárquico y no jerárquico |
+| 4  | Idea básica del algoritmo K-means                       |
+| 5  | Ejemplo gráfico (puntos en plano)                       |
+| 6  | Pasos del algoritmo                                     |
+| 7  | Inicialización de centroides                            |
+| 8  | Cálculo de distancias                                   |
+| 9  | Actualización de centroides                             |
+| 10 | Criterio de convergencia                                |
+| 11 | Ejemplo en R: `kmeans()`                                |
+| 12 | Evaluación del número de grupos (método del codo)       |
+| 13 | Validación con silueta                                  |
+| 14 | Visualización de clusters                               |
+| 15 | Interpretación de resultados                            |
+| 16 | Promedios de variables por cluster                      |
+| 17 | Aplicación: segmentación de hogares                     |
+| 18 | Precauciones (sensibilidad a escala y outliers)         |
+| 19 | Comparación con otros métodos (K-medoids, CLARA)        |
+| 20 | Resumen general del método                              |
+
+---
+
+## 5. Clustering jerárquico — 20 diapositivas
+
+**Objetivo general:** ilustrar cómo construir jerarquías de grupos y representarlas mediante dendrogramas.
+
+| #  | Contenido                                         |
+| -- | ------------------------------------------------- |
+| 1  | Introducción                                      |
+| 2  | Diferencias con K-means                           |
+| 3  | Concepto de jerarquía y fusión progresiva         |
+| 4  | Tipos de distancias (Euclidiana, Manhattan)       |
+| 5  | Tipos de enlace (single, complete, average, Ward) |
+| 6  | Ejemplo gráfico de enlace simple                  |
+| 7  | Ejemplo gráfico de enlace completo                |
+| 8  | Construcción del dendrograma                      |
+| 9  | Ejemplo en R con `hclust()`                       |
+| 10 | Interpretación del dendrograma                    |
+| 11 | Elección del número de clusters                   |
+| 12 | Corte de árbol (`rect.hclust`)                    |
+| 13 | Resumen de grupos obtenidos                       |
+| 14 | Comparación de métodos de enlace                  |
+| 15 | Ejemplo práctico: agrupamiento de hogares         |
+| 16 | Combinación con PCA o ACM antes del clustering    |
+| 17 | Evaluación de estabilidad del agrupamiento        |
+| 18 | Visualización con `fviz_dend()`                   |
+| 19 | Limitaciones del método                           |
+| 20 | Conclusiones finales del curso                    |
+
+---
+

@@ -1,6 +1,6 @@
 ---
 title: "Módulo 2 — Tidyverse I"
-subtitle: "Sección 1: Introducción al Tidyverse"
+subtitle: "Introducción al Tidyverse"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

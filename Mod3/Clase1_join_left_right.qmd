@@ -1,0 +1,198 @@
+---
+title: "Módulo 3 — Tidyverse II"
+subtitle: "Joins (Left y Right)"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+    css: styles.css
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE
+)
+library(printr)
+
+```
+
+# Introducción
+
+En el análisis de datos, es frecuente combinar información proveniente de distintas fuentes.  
+
+El paquete **dplyr** del *tidyverse* ofrece la familia de funciones `join` para unir dos tablas basadas en una o más llaves comunes.
+
+En esta sección exploraremos **left_join()** y **right_join()**, los métodos más utilizados para combinar bases en R.
+
+
+# Conceptos básicos
+
+Una *unión* (join) se realiza entre dos data frames:
+
+- **x**: tabla principal (izquierda)  
+
+- **y**: tabla secundaria (derecha)
+
+Cada observación se combina según una **clave** o conjunto de claves compartidas (por ejemplo: `id_hogar` o `id_pers`).
+
+
+
+# Tipos de joins en dplyr
+
+| Función        | Descripción breve |
+|-----------------|-------------------|
+| `left_join()`   | Conserva todas las filas de la izquierda (x). |
+| `right_join()`  | Conserva todas las filas de la derecha (y). |
+| `inner_join()`  | Mantiene solo las coincidencias. |
+| `full_join()`   | Incluye todas las filas de ambas tablas. |
+
+
+# Lectura de base de ejemplos 
+
+```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+datos <- readRDS("data/base_personas_gasto.rds")
+library(dplyr)
+glimpse(datos)
+```
+
+# Variables principales:
+
+* `id_hogar`, `id_pers`: identificadores.
+
+```{r}
+n_distinct(datos$id_hogar)
+```
+
+* `ingreso_hh`, `gasto_hh`: variables de ingreso y gasto por hogar.
+
+```{r}
+summary(datos$ingreso_hh)
+summary(datos$gasto_hh)  
+```
+
+* `edad`, `sexo`, `etnia`: características individuales.
+
+# División de la base
+
+Dividiremos la base en dos subconjuntos:
+
+* `datos_hogar`: información a nivel de hogar.
+
+```{r}
+set.seed(1245)
+datos_hogar <- datos %>% 
+  select(id_hogar, ingreso_hh, gasto_hh, pobreza, area) %>% 
+  distinct() %>% 
+  sample_frac(size = .5)
+```
+
+* `datos_persona`: información individual.
+
+```{r}
+set.seed(1235)
+datos_persona <- datos %>% 
+  select(id_hogar, id_pers, edad, sexo, etnia, anoest) %>% 
+    sample_frac(size = .8)
+```
+
+# Exploración de los subconjuntos
+
+```{r}
+head(datos_hogar, 4)
+```
+
+
+```{r}
+head(datos_persona, 4)
+```
+
+
+# Ejemplo de Left Join
+
+**Objetivo:** añadir la información del hogar a cada persona, manteniendo todas las personas.
+
+```{r}
+n_distinct(datos_hogar$id_hogar)
+datos_left <- datos_persona %>% 
+  left_join(datos_hogar, by = "id_hogar")
+n_distinct(datos_left$id_hogar)
+```
+
+
+# Interpretación del Left Join
+
+```{r}
+datos_left  %>% head(6)
+```
+
+* Todas las filas de `datos_persona` se conservan.
+
+* Las variables de `datos_hogar` se añaden según coincidencia en `id_hogar`.
+
+* Si algún hogar no existe en `datos_hogar`, se asignan valores `NA`.
+
+
+# Ejemplo de Right Join
+
+**Objetivo:** mantener todos los hogares, incluso aquellos sin personas registradas.
+
+```{r}
+n_distinct(datos_hogar$id_hogar)
+datos_right <- datos_persona %>% 
+  right_join(datos_hogar, by = "id_hogar")
+n_distinct(datos_right$id_hogar)
+```
+
+# Resultados del right Join
+
+```{r}
+datos_left  %>% head(6)
+```
+
+# Comparación entre left y right join
+
+| Aspecto           | Left Join              | Right Join              |
+| ----------------- | ---------------------- | ----------------------- |
+| Tabla principal   | Personas               | Hogares                 |
+| Filas conservadas | Todas las personas     | Todos los hogares       |
+| NA posibles       | En variables del hogar | En variables de persona |
+
+
+# Conclusiones de la sección
+
+* `left_join()` es ideal cuando se desea conservar el universo principal (por ejemplo, personas).
+
+* `right_join()` resulta útil al priorizar la información del hogar o marco maestro.
+* Ambos son **simétricos** si se invierte el orden de los data frames.
+
+
+
+# Próxima sección
+
+En la siguiente sección abordaremos las funciones:
+
+* `full_join()`
+* `inner_join()`
+* `semi_join()`
+* `anti_join()`
+
+Analizaremos cómo filtran y combinan registros según coincidencias exactas entre bases.

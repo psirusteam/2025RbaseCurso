@@ -1,0 +1,274 @@
+---
+title: "Módulo 3 — Tidyverse II"
+subtitle: "`pivot_longer() y pivot_wider()`"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+    css: styles.css
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE
+)
+library(printr)
+
+```
+
+# Introducción
+
+En esta sección exploraremos cómo transformar la estructura de los datos entre formato **ancho (wide)** y **largo (long)** usando la librería `tidyr` del ecosistema `tidyverse`.
+
+Estas transformaciones son esenciales para:
+
+- Preparar bases para análisis estadístico o modelado.
+
+- Ajustar la forma de los datos según los requerimientos de funciones o gráficos.
+
+- Estandarizar estructuras provenientes de diferentes fuentes.
+
+# Base de ejemplo
+
+```{r}
+library(tidyverse)
+datos <- readRDS("data/base_personas_gasto.rds")
+```
+
+* `datos_persona`: información individual.
+
+```{r}
+set.seed(1235)
+datos_persona <- datos %>% 
+  select(id_hogar, id_pers, edad, sexo, etnia, 
+         anoest,ingreso, gasto) %>% 
+    sample_frac(size = .8)
+```
+
+
+# División de la base original
+
+* `datos_hogar`: información a nivel de hogar.
+
+```{r}
+set.seed(1245)
+datos_hogar <- datos %>% 
+  select(id_hogar, ingreso_hh, gasto_hh, pobreza, area) %>% 
+  distinct() %>% sample_frac(size = .50)
+
+datos_hogar_t1 <- datos_hogar %>% sample_frac(size = .30) %>% 
+  mutate(tiempo = "t1" )
+
+datos_hogar_t2 <- datos_hogar %>% sample_frac(size = .3) %>% 
+  mutate(tiempo = "t2" )
+
+datos_hogar <- bind_rows(datos_hogar_t1,datos_hogar_t2)
+```
+
+
+
+# Contexto: formato largo y ancho
+
+* **Formato ancho (wide)**: cada fila representa una unidad (hogar o persona) con múltiples variables como columnas.
+
+* **Formato largo (long)**: cada fila representa una observación de variable–valor.
+
+* La función principal utilizada será `pivot_longer()` y `pivot_wider()` del paquete `tidyr`.
+
+Estas transformaciones permiten manipular bases para análisis descriptivos o gráficos.
+
+# `pivot_wider()`
+
+Convierte filas en columnas, expandiendo los valores de una variable.
+
+```r
+pivot_wider(
+  data,
+  names_from,   # Variable cuyos valores se convierten en nombres de columnas
+  values_from,  # Variable cuyos valores se llenan en las nuevas columnas
+  values_fill = NULL,  # Valor por defecto si faltan datos
+  names_prefix = NULL  # Prefijo opcional para los nuevos nombres
+)
+```
+
+# Ejemplo
+
+```{r}
+tabla_ancha  <- datos_hogar %>%
+  pivot_wider(names_from = tiempo, 
+              values_from = ingreso_hh)
+tabla_ancha %>% head(5)
+```
+
+# Funciones similares:
+
+* `spread()` *(deprecated)* — versión anterior de `pivot_wider()`.
+
+* `dcast()` del paquete **reshape2** — más control para operaciones agregadas.
+
+* `acast()` — igual que `dcast()`, pero devuelve un arreglo en lugar de un data frame.
+
+
+# `pivot_longer()`
+
+Convierte columnas en filas, condensando la estructura de los datos.
+
+```r
+pivot_longer(
+  data,
+  cols,       # Columnas que se combinarán
+  names_to,   # Nombre de la variable que almacenará los nombres originales
+  values_to,  # Nombre de la variable que almacenará los valores
+  names_prefix = NULL,
+  values_drop_na = FALSE
+)
+```
+
+# Ejemplo
+
+```{r}
+tabla_larga <- tabla_ancha %>%
+  pivot_longer(
+    cols = starts_with("t"),
+    names_to = "tiempo",
+    values_to = "ingreso_hh"
+  )
+head(tabla_larga)
+```
+
+# Funciones similares:
+
+* `gather()` *(deprecated)* — versión anterior de `pivot_longer()`.
+
+* `melt()` del paquete **reshape2** — útil para marcos de datos y matrices.
+
+* `stack()` de base R — para estructuras más simples, sin necesidad de tidyverse.
+
+
+
+# Ejemplo de formato ancho
+
+Visualicemos el hogar con varias columnas de gasto y educación:
+
+```{r}
+head(datos_persona)
+```
+
+# Conversión a formato largo
+
+Usamos `pivot_longer()` para transformar columnas numéricas a formato largo.
+
+```{r}
+personas_largo <- datos_persona %>%
+  pivot_longer(cols = c(ingreso, gasto),
+               names_to = "variable",
+               values_to = "valor")
+
+```
+
+
+# Visualización del formato largo
+
+Cada fila ahora representa un **par (variable, valor)**, lo que facilita cálculos o gráficos por tipo de variable.
+
+
+```{r}
+head(personas_largo, 8)
+```
+
+# Aplicación práctica: promedio por tipo de variable
+
+```{r}
+personas_largo %>%
+  group_by(variable) %>%
+  summarise(media = mean(valor, na.rm = TRUE))
+```
+
+
+# Transformación inversa: formato ancho
+
+Si se desea volver al formato anterior, se utiliza `pivot_wider()`.
+
+```{r}
+personas_ancho2 <- personas_largo %>%
+  mutate(id_pers = paste0(id_hogar, id_pers)) %>%
+  group_by(id_pers, variable) %>%
+  summarise(valor = mean(valor), .groups = "drop") %>%
+  pivot_wider(names_from = variable, values_from = valor)
+```
+
+
+
+# Verificación del resultado
+
+```{r}
+glimpse(personas_ancho2)
+```
+
+
+```{r}
+head(personas_ancho2)
+
+```
+
+# Transformación inversa: formato ancho
+
+Si se desea volver al formato anterior, se utiliza `pivot_wider()`.
+
+```{r}
+personas_ancho3 <- personas_largo %>%
+  mutate(id_pers = paste0(id_hogar, id_pers)) %>%
+  pivot_wider(names_from = variable,
+              values_from = valor,
+              values_fn  = mean)
+```
+
+
+# Verificación del resultado
+
+```{r}
+head(personas_ancho3)
+
+```
+
+# Ejemplo adicional: categorización por sexo
+
+Podemos analizar la estructura de gasto e ingreso según el sexo:
+
+```{r}
+personas_largo %>%
+  group_by(sexo, variable) %>%
+  summarise(media = mean(valor, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = variable, values_from = media)
+```
+
+
+# Recomendaciones finales
+
+* `pivot_longer()` facilita la estandarización para análisis gráficos.
+
+* `pivot_wider()` es útil para crear matrices o reportes tabulares.
+
+* Siempre verificar la cantidad de filas antes y después de cada transformación.
+
+* Estas funciones reemplazan el antiguo `gather()` y `spread()` de `tidyr`.
+

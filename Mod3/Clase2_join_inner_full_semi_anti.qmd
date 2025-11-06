@@ -1,0 +1,227 @@
+---
+title: "Módulo 3 — Tidyverse II"
+subtitle: "Joins (full, inner, semi y anti)"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+    css: styles.css
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE
+)
+library(printr)
+
+```
+
+# Introducción
+
+La manipulación de datos relacionales es fundamental en el análisis estadístico aplicado. Con frecuencia se dispone de múltiples fuentes de información que comparten una o más llaves identificadoras (por ejemplo, `id_hogar` y `id_pers`), lo que requiere estrategias eficientes de unión.
+
+El paquete **dplyr**, dentro del ecosistema **tidyverse**, ofrece una familia de funciones `*_join()` que permiten combinar marcos de datos de manera controlada, transparente y eficiente.
+
+
+# Base de ejemplo
+
+```{r}
+library(dplyr)
+datos <- readRDS("data/base_personas_gasto.rds")
+```
+## *División de la base original*
+
+* `datos_hogar`: información a nivel de hogar.
+
+```{r}
+set.seed(1245)
+datos_hogar <- datos %>% 
+  select(id_hogar, ingreso_hh, gasto_hh, pobreza, area) %>% 
+  distinct() %>% 
+  sample_frac(size = .5)
+```
+
+* `datos_persona`: información individual.
+
+```{r}
+set.seed(1235)
+datos_persona <- datos %>% 
+  select(id_hogar, id_pers, edad, sexo, etnia, anoest,ingreso) %>% 
+    sample_frac(size = .8)
+```
+
+# `inner_join()`
+
+Devuelve únicamente las observaciones **que existen en ambas bases**.
+
+```{r}
+nrow(datos_persona)
+base_inner <- datos_hogar %>% 
+  inner_join(datos_persona, by = "id_hogar")
+nrow(base_inner)
+```
+
+* Filtra hogares que tienen al menos una persona registrada.
+
+* Elimina registros sin correspondencia (casas deshabitadas o personas sin hogar asignado).
+
+* Es útil cuando se requiere consistencia estricta entre módulos.
+
+
+# `full_join()`
+
+Combina **todas las observaciones** de ambas tablas.
+
+Si una llave no tiene correspondencia, las variables faltantes se completan con `NA`.
+
+
+```{r}
+nrow(datos_persona)
+base_full <- datos_hogar %>% 
+  full_join(datos_persona, by = "id_hogar")
+nrow(base_full)
+```
+
+* Equivale a una unión externa completa en SQL.
+
+* Es la más informativa para explorar **inconsistencias y duplicaciones**.
+
+
+#  Diagnóstico con `full_join()`
+
+```{r}
+base_full %>%
+  mutate(origen = case_when(
+    !is.na(ingreso_hh) & !is.na(ingreso) ~ "Ambas",
+    !is.na(ingreso_hh) &  is.na(ingreso) ~ "Solo hogares",
+     is.na(ingreso_hh) & !is.na(ingreso) ~ "Solo personas"
+  )) %>%
+  count(origen)
+```
+
+Permite identificar la *cantidad y tipo de registros no emparejados*.
+Esto es clave en depuración de microdatos.
+
+
+# `semi_join()`: Filtro positivo
+
+Retiene solo los registros de la tabla izquierda (`datos_hogar`) que tienen correspondencia en la derecha (`datos_persona`).
+
+```{r}
+nrow(datos_persona)
+hogares_con_personas <- datos_hogar %>% 
+  semi_join(datos_persona, by = "id_hogar")
+nrow(hogares_con_personas)
+```
+
+* Mantiene las variables originales de `hogares`.
+
+* No añade columnas de `personas`.
+
+* Ideal para filtrar subconjuntos consistentes.
+
+
+# `anti_join()`: Filtro negativo
+
+Extrae los registros de `hogares` que **no tienen correspondencia** en `personas`.
+
+```{r}
+nrow(datos_persona)
+hogares_sin_personas <- datos_hogar %>% 
+  anti_join(datos_persona, by = "id_hogar")
+nrow(hogares_sin_personas)
+```
+
+Sirve para detectar:
+
+* Hogares vacíos o sin módulo individual.
+
+* Errores de codificación en `id_hogar`.
+
+* Registros perdidos en bases complementarias.
+
+# Validación cruzada con `semi` y `anti`
+
+```{r}
+nrow(hogares_con_personas) + nrow(hogares_sin_personas)
+nrow(datos_hogar)
+```
+
+La suma debe coincidir con el total original, garantizando que los filtros son complementarios.
+
+# Ejemplo de control de calidad
+
+```{r}
+hogares_sin_personas %>%
+  select(id_hogar, area,  pobreza, ingreso_hh, gasto_hh) %>%
+  head()
+```
+
+Estos registros deberían revisarse antes de estimar totales ponderados o tasas de cobertura.
+
+
+# Resumen de la familia `join`
+
+| Función        | Tipo de unión           | Foco                  |
+| -------------- | ----------------------- | --------------------- |
+| `left_join()`  | Unión externa izquierda | Base principal        |
+| `right_join()` | Unión externa derecha   | Población secundaria  |
+| `inner_join()` | Intersección            | Consistencia          |
+| `full_join()`  | Unión total             | Exploración           |
+| `semi_join()`  | Filtro positivo         | Subconjunto existente |
+| `anti_join()`  | Filtro negativo         | Subconjunto ausente   |
+
+
+# Resumen de la familia `join`
+
+![](img/01_join.png){fig-align="center" width=80%}
+
+# Buenas prácticas
+
+* Verificar que la llave (`by`) sea única en la base principal.
+
+* Evitar duplicados que generen multiplicación de filas.
+
+* Usar `distinct()` antes de unir si hay riesgo de registros repetidos.
+
+
+# Aplicación práctica en encuestas
+
+En estudios de hogares, los `join` se utilizan para:
+
+* Vincular módulos de vivienda, hogar y persona.
+
+* Asociar variables de ponderación o estratificación (`fep`, `upm`).
+
+* Enlazar bases de gasto o ingreso individual al hogar de referencia.
+
+
+# Conclusión
+
+- El dominio de la familia `join` del tidyverse es esencial para garantizar integridad y coherencia
+en los procesos de integración de datos.
+
+- Comprender qué registros se conservan o excluyen según el tipo de unión es clave
+para evitar sesgos y duplicaciones en los análisis.
+
+
+

@@ -1,0 +1,268 @@
+---
+title: "Módulo 3 — Tidyverse II"
+subtitle: "Uso de las funciones más comunes del paquete `purrr`"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+    css: styles.css
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE
+)
+library(printr)
+
+```
+
+# Introducción
+
+**Motivación**
+
+* En muchos análisis aplicamos funciones repetidas sobre columnas o listas.
+
+* `purrr` ofrece una forma funcional, segura y legible de reemplazar bucles `for` o `apply`.
+
+* Se integra perfectamente con el ecosistema `tidyverse`.
+
+
+# ¿Qué es `purrr`?
+
+* Es parte del `tidyverse`.
+
+* Permite aplicar funciones sobre elementos de listas o columnas.
+
+* Sus funciones comienzan con `map`.
+
+* Devuelven resultados con un tipo de salida predecible.
+
+
+# Sintaxis general
+
+```r
+map(.x, .f)
+```
+
+* `.x`: lista o vector de entrada.
+
+* `.f`: función que se aplica a cada elemento.
+
+Ejemplo básico:
+
+```{r}
+library(purrr); library(tidyverse); library(tibble)
+map(.x = 1:3, .f = sqrt) # lista
+```
+
+# Tipos de salida
+
+```{r}
+map_dbl(.x = 1:3,.f =  sqrt)   # numérico
+```
+
+
+```{r}
+map_chr(.x = 1:3,.f =  as.character)  # texto
+map_df(.x = 1:3, ~  tibble(x = .x, y = .x^2)) # data frame
+```
+
+# Aplicar funciones a columnas numéricas
+
+Ejemplo: calcular medias de las variables monetarias del hogar.
+
+```{r}
+datos <- readRDS("data/base_personas_gasto.rds")
+datos %>%
+  select(ingreso, gasto, ingreso_hh, gasto_hh) %>%
+  map_dbl(mean, na.rm = TRUE)
+```
+
+
+# Uso con `mutate()` y `map_df()`
+
+Calcular promedios por UPM a partir de una lista de data frames:
+
+```{r}
+datos_list <- datos %>%
+  group_split(upm)
+
+resumen <- datos_list %>%
+  map_df( ~ summarise(
+    .x,
+    upm = first(upm),
+    media_ingreso = mean(ingreso),
+    media_gasto = mean(gasto)
+  ))
+```
+
+# Resultados del uso con `mutate()` y `map_df()`
+
+```{r}
+head(resumen)
+```
+
+
+# Funciones anónimas con `map()`
+
+```{r}
+map(1:3, ~ .x^2)
+map_chr(1:3, ~ paste0("UPM_", .x))
+```
+
+
+# Funciones personalizadas
+
+```{r}
+media_trim <- function(x, trim = 0.1) mean(x, trim = trim)
+
+map_dbl(list(datos$ingreso, datos$gasto), media_trim)
+
+```
+
+
+- El argumento **trim** indica la fracción de observaciones que se eliminarán de cada extremo de la distribución antes de calcular la media.
+
+
+# Combinación con `mutate()`
+
+Crear una columna resumen por hogar que contenga listas de indicadores:
+
+```{r}
+datos_hogar <- datos %>%
+  group_by(id_hogar) %>%
+  summarise(info = list(tibble::tibble(ingreso, gasto)))
+
+temp <- datos_hogar %>%
+  mutate(resumen = map(info, ~ mean(.x$ingreso))) %>% 
+  head()
+```
+
+# Restultados de la combinación con `mutate()`
+
+```{r}
+temp
+```
+
+
+# `map2()` para dos vectores
+
+```{r}
+map2(.x = 1:4, .y = 11:14, ~ .x + .y)
+```
+
+#  `pmap()` para múltiples columnas
+
+```{r}
+df <- tibble(a = 1:3, b = 4:6, c = 7:9)
+df
+pmap_dbl(df, ~ mean(c(...)))
+rowMeans(df)
+```
+
+
+# Integración con `stringr`
+
+Seleccionar variables que contengan la palabra “ingreso”.
+
+```{r}
+vars <- names(datos)
+vars
+map_lgl(vars, ~ str_detect(.x, "ingreso"))
+```
+
+
+
+# Ejemplo completo (I)
+
+1. Seleccionar columnas con “ingreso” y “gasto”.
+
+2. Calcular su media.
+
+3. Unir resultados con `bind_rows()`.
+
+
+```{r}
+cols <- names(datos)[str_detect(names(datos), "ingreso|gasto")]
+
+resultados <- cols %>%
+  map_df(~ tibble(variable = .x,
+                  media = mean(pull(datos, .x))))
+```
+
+
+
+```{r}
+resultados
+```
+
+
+# Ejemplo completo (II)
+
+Divida `datos` por `area` y calcule la media de ingreso por grupo.
+
+```{r}
+datos %>%
+  split(~ area + sexo) %>%
+  map_dbl(~ mean(.x$ingreso))
+```
+
+
+
+# Ejemplo completo (III)
+
+Calcule simultáneamente ingreso y gasto promedio por área.
+
+```{r}
+datos %>%
+  group_split(area) %>%
+  map_df(~ summarise(.x,
+                     area = first(area),
+                     ing_prom = mean(ingreso),
+                     gast_prom = mean(gasto)))
+```
+
+
+
+# Beneficios del uso de `purrr`
+
+* Reemplaza bucles con código más claro y funcional.
+
+* Permite aplicar funciones personalizadas fácilmente.
+
+* Se integra con `mutate` y `summarise`.
+
+* Ideal para automatizar procesos repetitivos.
+
+
+# Conclusión
+
+* `purrr` mejora la legibilidad y eficiencia del código.
+
+* Es esencial para programación funcional en R.
+
+* Facilita el trabajo con listas, data frames y estructuras complejas.
+
+* Clave para análisis reproducibles y modulares.
+
+
+

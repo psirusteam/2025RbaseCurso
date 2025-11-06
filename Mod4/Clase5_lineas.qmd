@@ -1,0 +1,148 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 4"
+subtitle: "Clase 5: Gráficos básicos - lineas"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+Los gráficos de líneas son una de las formas más comunes de visualizar la evolución de una
+variable numérica a lo largo del tiempo o de un orden lógico. Permiten identificar
+tendencias, ciclos y variaciones entre categorías o grupos.
+
+Para esta clase utilizaremos la librería tidyverse, que agrupa varias herramientas
+fundamentales para el análisis de datos en R. Dentro de ella se encuentra ggplot2, el
+paquete que usaremos para crear nuestros gráficos de barras.
+
+```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+# Introducción
+
+::: callout-note
+“Las líneas conectan puntos, pero también conectan historias: nos permiten ver el cambio
+en el tiempo.”
+:::
+
+# ¿Cuándo usar un gráfico de líneas?
+
+Usa líneas cuando:
+
+-   Quieres mostrar la evolución de una variable en el tiempo (años, meses, periodos,
+    etc.).
+
+-   Deseas comparar tendencias de varios grupos o categorías.
+
+-   La variable del eje X tiene orden lógico o cronológico.
+
+Evítalo cuando:
+
+-   Los datos son categóricos sin orden (usa barras).
+
+-   Hay pocos puntos o intervalos irregulares (considera puntos o áreas).
+
+-   El eje X no tiene sentido secuencial (podría inducir interpretaciones erróneas).
+
+# ¿Cuándo usar un gráfico de líneas?
+
+:::{.callout-warning}
+- Usa líneas **solo** cuando el eje X tenga **orden temporal o lógico**.  
+- Evita conectar categorías sin secuencia (¡podría parecer una tendencia falsa!).  
+- Si hay **NA** en los datos, la línea se cortará.  
+:::
+
+# Carga base de datos ejemplo
+```{r echo=TRUE, figure.we}
+ datos <- readRDS("../Data/base_personas_gasto.rds") 
+ head(datos[,1:8], 5)
+```
+
+# Carga base de datos ejemplo
+
+Para este análisis, y dado que necesitamos una variable temporal para graficar líneas, se crea la variable anio de forma simulada (2018–2024). Esta variable es solo para fines didácticos.
+
+```{r echo=TRUE}
+set.seed(123)
+datos <- datos %>%
+  dplyr::mutate(anio = sample(2018:2024, dplyr::n(), replace = TRUE))
+
+head(datos[, c("anio", "sexo", "ingreso_hh", "gasto_hh")], 5)
+```
+
+# Paso a paso: líneas de ingreso promedio por año
+
+```{r echo=TRUE, warning=FALSE, out.width="70%", fig.align="center"}
+serie_ingreso <- datos %>%
+group_by(anio) %>%
+summarise(ingreso_prom = mean(ingreso_hh, na.rm = TRUE), .groups = "drop") %>%
+arrange(anio)
+head(serie_ingreso)
+```
+
+# Paso a paso: líneas de ingreso promedio por año
+
+**Paso 1: capa base**
+
+```{r echo=TRUE, warning=FALSE, out.width="70%", fig.align="center"}
+ggplot(serie_ingreso, aes(x = anio, y = ingreso_prom))
+```
+
+# Paso a paso: líneas de ingreso promedio por año
+
+**Paso 2: añadir línea**
+
+```{r echo=TRUE, warning=FALSE, out.width="70%", fig.align="center"}
+ggplot(serie_ingreso, aes(x = anio, y = ingreso_prom)) +
+geom_line()
+```
+
+# Paso a paso: líneas de ingreso promedio por año
+
+**Paso 3: títulos + Color + tema**
+
+```{r echo=TRUE, warning=FALSE, out.width="70%", fig.align="center"}
+linea_ing_3 <- ggplot(serie_ingreso, aes(x = anio, y = ingreso_prom)) +
+geom_line(color = "blue") +
+geom_point(size = 2) +
+labs(title = "Ingreso del hogar promedio por año",
+subtitle = "Serie anual (promedio simple)",
+x = "Año", y = "Ingreso promedio del hogar") +
+theme_minimal(base_size = 13)
+```
+
+# Paso a paso: líneas de ingreso promedio por año
+
+**Paso 3: títulos + Color + tema**
+
+```{r echo=TRUE, warning=FALSE, out.width="70%", fig.align="center"}
+linea_ing_3
+```
+
+# Ejemplo 1. Comparar dos series: ingreso y gasto promedio por año
+
