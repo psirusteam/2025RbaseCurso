@@ -1,0 +1,221 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 5"
+subtitle: "Clase 2: Inferencia para medias y diferencia de medias I"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+
+
+# Introducción
+
+En la clase anterior analizamos la inferencia sobre una media poblacional.
+Hoy extenderemos ese concepto para comparar dos medias, diferenciando entre:
+
+- Muestras independientes (dos grupos distintos).
+
+- Muestras pareadas (antes y después, o casos emparejados).
+
+# Introducción
+
+
+:::{.callout-note}
+Objetivos de esta clase:
+
+- Contrastar hipótesis sobre la diferencia de medias.
+
+- Aplicar pruebas t en R según el tipo de muestra.
+
+- Interpretar los resultados con visualizaciones.
+:::
+
+
+# Base de datos y muestra
+
+Usaremos la misma base base_personas_gasto.rds, centrando el análisis en el gasto medio .
+
+```{r echo=TRUE}
+library(tidyverse)
+
+datos <- readRDS("../Data/base_personas_gasto.rds")
+set.seed(123)
+muestra <- slice_sample(datos, n = 500)
+head(muestra[,2:8], 5)
+
+```
+
+# Comparación de medias (muestras independientes)
+
+Supongamos que queremos saber si el gasto promedio de los hogares difiere entre hombres y mujeres.
+
+Formulamos las hipótesis:
+
+$$
+\begin{aligned}
+H_0 &: \mu_H = \mu_M \\
+H_1 &: \mu_H \neq \mu_M
+\end{aligned}
+$$
+
+# Prueba t para muestras independientes
+
+Usamos la prueba t de Student:
+
+```{r echo=TRUE}
+t.test(gasto_hh ~ sexo, data = muestra, var.equal = TRUE)
+
+```
+
+# Prueba t para muestras independientes
+
+
+:::{.callout-tip}
+
+Si el valor-p < 0.05 → rechazamos $H_0$ (hay diferencia significativa).
+
+Si el valor-p > 0.05 → no se rechaza $H_0$ (no hay evidencia de diferencia).
+:::
+
+# Resumen descriptivo
+
+
+```{r echo=TRUE}
+muestra %>%
+group_by(sexo) %>%
+summarise(
+media = mean(gasto_hh, na.rm = TRUE),
+sd = sd(gasto_hh, na.rm = TRUE),
+n = n()
+)
+
+```
+
+# Visualización comparativa
+
+```{r echo=TRUE}
+grap <- ggplot(muestra, aes(x = sexo, y = gasto_hh, fill = sexo)) +
+geom_boxplot(alpha = 0.7) +
+labs(title = "Comparación del gasto promedio por sexo",
+x = "Sexo", y = "Gasto del hogar") +
+theme_minimal(base_size = 12)
+
+```
+
+
+# Visualización comparativa
+
+```{r echo=TRUE, warning=FALSE, out.width="75%", fig.align="center"}
+grap 
+```
+
+# Diferencia de medias (muestras pareadas)
+
+En contextos de evaluación o intervención, se dispone de **dos mediciones del mismo grupo**:  por ejemplo, el **gasto promedio de los hogares antes y después** de la implementación de una política pública.
+
+En este ejemplo, a partir del gasto observado en la base, se simula un escenario “después” donde los hogares aumentan ligeramente su gasto, reflejando un posible efecto de política o cambio económico.
+
+# Diferencia de medias (muestras pareadas)
+
+**Formulación de hipótesis (pareadas):**
+
+$$
+\begin{aligned}
+H_0 &: \mu_{\text{antes}} = \mu_{\text{después}} \\
+H_1 &: \mu_{\text{antes}} \neq \mu_{\text{después}}
+\end{aligned}
+$$
+
+Donde:
+
+- $\mu_{\text{antes}}$ = gasto promedio antes de la política  
+- $\mu_{\text{después}}$ = gasto promedio después de la política
+
+# Diferencia de medias (muestras pareadas)
+
+**Crear un subconjunto y generar una versión 'después' con pequeña variación**
+
+
+```{r echo=TRUE}
+
+df_pareada <- datos %>%
+  slice_sample(n = 200) %>%
+  transmute(
+    id = row_number(),
+    gasto_antes = as.numeric(gsub("[^0-9.-]", "", as.character(gasto_hh)))
+  ) %>%
+  filter(is.finite(gasto_antes)) %>%
+  mutate(
+    gasto_despues = gasto_antes + rnorm(n(), mean = 50, sd = 100)
+  )
+
+```
+
+# Diferencia de medias (muestras pareadas)
+
+**Crear un subconjunto y generar una versión 'después' con pequeña variación**
+
+
+```{r echo=TRUE}
+
+
+head(df_pareada, 10)
+```
+
+
+# Diferencia de medias (muestras pareadas)
+
+**Prueba t pareada**
+
+```{r echo=TRUE}
+t.test(df_pareada$gasto_antes, df_pareada$gasto_despues, paired = TRUE)
+```
+
+# Diferencia de medias (muestras pareadas)
+
+**Prueba t pareada**
+
+:::{.callout-note}
+Interpretación:
+
+Si $p < 0.05$, existe evidencia de cambio significativo entre el gasto antes y después de la intervención.
+
+Si $p > 0.05$, no hay evidencia de cambio.
+:::
+
+# Conclusiones de la clase
+
+| Tipo de prueba                    | Escenario                                  | Hipótesis nula  | Función en R                           | Interpretación                                |
+| --------------------------------- | ------------------------------------------ | --------------- | -------------------------------------- | --------------------------------------------- |
+| **t de Student (independientes)** | Dos grupos distintos con varianzas iguales | $\mu_1 = \mu_2$ | `t.test(y ~ grupo, var.equal = TRUE)`  | Compara dos medias bajo igualdad de varianzas |
+| **t pareada**                     | Dos mediciones del mismo grupo             | $\mu_d = 0$     | `t.test(x1, x2, paired = TRUE)`        | Evalúa cambios antes y después                |
+# Conclusiones de la clase
+
+
+:::{.callout-tip}
+En resumen:
+La inferencia para medias nos permite evaluar si los cambios observados son estadísticamente significativos, ya sea entre grupos distintos o dentro del mismo grupo a lo largo del tiempo.
+:::
