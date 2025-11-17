@@ -1,6 +1,6 @@
 ---
 title: "Fundamentos de ciencia de datos con R - Módulo 5"
-subtitle: "Clase 2: Inferencia para medias y diferencia de medias I"
+subtitle: "Clase 3: Inferencia para medias y diferencia de medias II"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

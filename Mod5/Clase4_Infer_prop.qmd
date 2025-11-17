@@ -1,0 +1,242 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 5"
+subtitle: "Clase 4: Inferencia para proporciones y diferencia de proporciones I"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# **Introducción**
+
+En las clases anteriores trabajamos la inferencia para medias y la diferencia de medias
+entre grupos. En esta clase nos centraremos en variables categóricas/binarias, donde el
+parámetro de interés es una proporción poblacional.
+
+Ejemplos típicos:
+
+-   Proporción de hogares en pobreza.
+
+-   Proporción de personas ocupadas.
+
+-   Proporción de hogares con acceso a internet.
+
+# **Introducción**
+
+::: callout-note
+Objetivos de esta clase:
+
+-   Definir la proporción poblacional y su estimador muestral.
+
+-   Construir intervalos de confianza para una proporción.
+
+-   Formular y aplicar pruebas de hipótesis para una proporción.
+:::
+
+# **Base de datos y muestra**
+
+Usaremos nuevamente la base base_personas_gasto.rds, y construiremos una variable binaria
+que indique si el hogar tiene ingreso bajo.
+
+```{r echo=TRUE}
+library(tidyverse)
+
+datos <- readRDS("../Data/base_personas_gasto.rds")
+
+set.seed(123)
+muestra <- slice_sample(datos, n = 400)
+head(muestra[, 2:8],5)
+```
+
+# **Base de datos y muestra**
+
+```{r echo=TRUE}
+
+mediana_ingreso <- median(muestra$ingreso_hh, na.rm = TRUE)
+
+muestra <- muestra %>%
+mutate(
+ingreso_bajo = if_else(ingreso_hh < mediana_ingreso, 1, 0)
+)
+
+head(muestra[, c("ingreso_hh", "ingreso_bajo", "sexo")], 5)
+```
+
+# **Base de datos y muestra**
+
+::: callout-note
+Interpretación de ingreso_bajo:
+
+1 = hogar con ingreso por debajo de la mediana (ingreso bajo).
+
+0 = hogar con ingreso igual o superior a la mediana.
+:::
+
+# **Proporción poblacional y estimador**
+
+Sea $Y$ una variable binaria:
+
+$Y_i = 1$ si el hogar cumple la condición de interés (ej. ingreso bajo).
+
+$Y_i = 0$ en caso contrario.
+
+La proporción poblacional se define como:
+
+$$p=P(Y=1)$$
+
+En una muestra de tamaño $n$, el estimador natural de $p$ es la proporción muestral:
+
+$$\hat{p} = \frac{1}{n} \sum_{i=1}^{n} Y_i$$
+
+# **Proporción muestral en el ejemplo**
+
+Calculamos la proporción de hogares con ingreso bajo en nuestra muestra:
+
+```{r echo=TRUE}
+
+y <- muestra$ingreso_bajo
+n <- length(y)
+x <- sum(y)     # número de "éxitos"
+
+p_hat <- x / n
+c(n = n, exitos = x, proporcion_muestral = p_hat)
+
+```
+
+:::{.callout-tip}
+
+$\hat{p}$ es el porcentaje de hogares con ingreso bajo en la muestra y se usa como estimador de la proporción poblacional $p$.
+:::
+
+# **Error estándar de la proporción**
+
+Bajo muestreo aleatorio simple y muestras grandes, el estimador $\hat{p}$ tiene:
+
+Media: $E(\hat{p}) \approx p$
+
+Varianza: $\mathrm{Var}(\hat{p}) \approx \dfrac{p(1 - p)}{n}$
+
+Usando la muestra, el error estándar se estima reemplazando $p$ por $\hat{p}$:
+
+$$\widehat{SE}(\hat{p}) = \sqrt{\frac{\hat{p}(1 - \hat{p})}{n}}$$
+
+# **Error estándar de la proporción**
+
+```{r echo=TRUE}
+
+se_p <- sqrt(p_hat * (1 - p_hat) / n)
+se_p
+
+```
+
+# **Intervalo de confianza para una proporción**
+
+Para muestras grandes, un intervalo de confianza al 95% para $p$ se puede aproximar como:
+
+$$\hat{p} \pm z_{0.975} \cdot \widehat{SE}(\hat{p})$$
+
+donde $z_{0.975} \approx 1.96$.
+
+
+# **Intervalo de confianza para una proporción**
+
+```{r echo=TRUE}
+
+z <- 1.96
+ic_95_p <- c(
+p_hat - z * se_p,
+p_hat + z * se_p
+)
+ic_95_p
+
+```
+
+
+:::{.callout-tip}
+
+“Con un 95% de confianza, la proporción poblacional de hogares con ingreso bajo se encuentra entre los límites del intervalo calculado.”
+:::
+
+# **Prueba de hipótesis para una proporción**
+
+Supongamos que se plantea la siguiente hipótesis sobre la proporción de hogares con ingreso bajo:
+
+$$
+\begin{aligned}
+H_0 &: p = 0.40 \\
+H_1 &: p \neq 0.40
+\end{aligned}
+$$
+
+Donde $p = 0.40$ representa un valor de referencia de interés (por ejemplo, el valor esperado según una política o un dato histórico).
+
+# **Prueba de hipótesis para una proporción# Prueba de hipótesis para una proporción**
+
+:::{.callout-important}
+Si la proporción observada $\hat{p}$ está “muy lejos” de 0.40 (según su error estándar), se rechaza $H_0$.
+
+Si no, no hay evidencia suficiente para rechazar $H_0$.
+:::
+
+# **Prueba de hipótesis para una proporción en R**
+
+Podemos usar prop.test() para realizar la prueba:
+
+```{r echo=TRUE}
+
+prop.test(x = x, n = n,p = 0.40,
+  alternative = "two.sided",
+  correct = FALSE
+)
+
+```
+
+# **Prueba de hipótesis para una proporción en R**
+
+:::{.callout-note title="Pregunta"}
+Con base en el valor-p, ¿se debe **rechazar** o **no rechazar** la hipótesis nula $H_0$?
+:::
+
+# Conclusiones de la clase
+
+| Tema                                | Idea principal                                         | Herramienta en R                |
+| ----------------------------------- | ------------------------------------------------------ | ------------------------------- |
+| Proporción poblacional $p$          | Probabilidad de “éxito” en la población                | —                               |
+| Proporción muestral $\hat{p}$       | Estimador puntual de $p$                               | `mean(y)`          |
+| IC para una proporción              | $\hat{p} \pm z \cdot \sqrt{\hat{p}(1-\hat{p})/n}$      |     |
+| Prueba para una proporción          | Contraste $H_0: p = p_0$ vs $H_1$ alternativa          | `prop.test(x, n, p = p0)`       |
+
+# Conclusiones de la clase
+
+
+:::{.callout-note title="En resumen"}
+
+- La inferencia para proporciones es clave cuando trabajamos con variables binarias.
+
+- La proporción muestral $\hat{p}$ es un estimador sencillo pero muy poderoso.
+
+- prop.test() permite, en una sola función, obtener intervalos de confianza y pruebas de hipótesis para una o dos proporciones.
+
+:::

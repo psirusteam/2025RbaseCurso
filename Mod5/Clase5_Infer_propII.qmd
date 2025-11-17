@@ -1,0 +1,176 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 5"
+subtitle: "Clase 5: Inferencia para proporciones y diferencia de proporciones II"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# **Introducción**
+
+En la Clase 4 revisamos la inferencia para una proporción poblacional.
+En esta clase profundizaremos en la comparación entre dos proporciones provenientes de dos grupos independientes.
+
+
+# **Introducción**
+
+:::{.callout-note title="Objetivos de esta clase"}
+
+- Entender la diferencia de proporciones como parámetro poblacional.
+
+- Construir intervalos de confianza para p1 - p2
+
+- Formular y evaluar hipótesis para comparar dos proporciones.
+:::
+
+# **Estimador para dos proporciones**
+
+Sea  $Y_1$ una variable binaria en el Grupo 1 y $Y_2$ en el Grupo 2. 
+
+
+$$\hat{p}_1 = \frac{x_1}{n_1}, \quad \hat{p}_2 = \frac{x_2}{n_2}$$
+
+donde:
+
+- $X_1$,$X_2$ :número de éxitos en cada grupo
+- $n_1$,$n_2$ :tamaños de muestra
+
+El estimador de la diferencia es:
+
+$$\widehat{p_1 - p_2} = \hat{p}_1 - \hat{p}_2$$
+
+# **Error estándar de la diferencia**
+
+Para muestras grandes, el error estándar se estima como:
+
+$$SE(\hat{p}_1 - \hat{p}_2) = \sqrt{\frac{\hat{p}_1(1 - \hat{p}_1)}{n_1} + \frac{\hat{p}_2(1 - \hat{p}_2)}{n_2}}$$
+
+# **Base de datos y muestra**
+
+```{r echo=TRUE}
+library(tidyverse)
+
+datos <- readRDS("../Data/base_personas_gasto.rds")
+
+set.seed(123)
+muestra <- slice_sample(datos, n = 1000)
+head(muestra[, 2:8],5)
+```
+
+
+# **Base de datos y muestra**
+
+```{r echo=TRUE}
+muestra <- muestra %>%
+mutate(
+mediana_ingreso = median(ingreso_hh, na.rm = TRUE),
+ingreso_bajo = if_else(ingreso_hh < mediana_ingreso, 1, 0)
+)
+```
+
+# **Comparación por sexo**
+
+```{r echo=TRUE}
+tabla <- muestra %>%
+group_by(sexo) %>%
+summarise(
+n = n(),
+x = sum(ingreso_bajo),
+p = mean(ingreso_bajo)
+)
+
+tabla
+
+```
+
+
+# **Intervalo de confianza para $p_1 - $p_2**
+
+```{r echo=TRUE}
+p1 <- tabla$p[1]; n1 <- tabla$n[1]
+p2 <- tabla$p[2]; n2 <- tabla$n[2]
+
+dif <- p1 - p2
+se_dif <- sqrt( (p1*(1-p1))/n1 + (p2*(1-p2))/n2 )
+
+ic <- c(dif - 1.96*se_dif, dif + 1.96*se_dif)
+ic
+
+
+```
+
+
+# **Intervalo de confianza para $p_1 - $p_2**
+
+:::{.callout-tip title="Interpretación"}
+
+- Si el intervalo de confianza incluye 0, no hay evidencia de diferencia significativa entre las dos proporciones.
+
+-  Si no incluye 0, existe diferencia estadísticamente significativa.
+:::
+
+
+# Prueba para dos proporciones en R
+
+$$
+\begin{aligned}
+H_0 &: p_1 = p_2\\
+H_1 &: p_1 \neq  p_2
+\end{aligned}
+$$
+donde:
+
+- $H_0$ : La proporción del Grupo 1 es igual a la proporción del Grupo 2.
+
+- $H_1$ : Las proporciones de los dos grupos son diferentes.
+
+# Prueba para dos proporciones en R
+
+```{r echo=TRUE}
+prop.test(x = tabla$x,n = tabla$n,
+alternative = "two.sided",
+correct = FALSE
+)
+```
+
+# Prueba para dos proporciones en R
+
+::: callout-important
+
+Si el valor-p < 0.05 → evidencia de diferencia significativa entre proporciones.
+
+Si el valor-p ≥ 0.05 → no hay evidencia suficiente para afirmar una diferencia.
+:::
+
+# Conclusiones de la clase
+
+| Tema                                | Idea principal                          | Herramienta                     |
+| ----------------------------------- | --------------------------------------- | ------------------------------- |
+| Estimador ( $\hat{p}_1$ - $\hat{p}_2$ ) | Mide la diferencia entre grupos         | —                               |
+| Error estándar                      | Determina la variabilidad del estimador | —                               |
+| IC para dos proporciones            | Evalúa si la diferencia incluye 0       | cálculo manual   |
+| Prueba de hipótesis                 | Contrasta ($p_1$ = $p_2$)                   | `prop.test(c(x1,x2), c(n1,n2))` |
+

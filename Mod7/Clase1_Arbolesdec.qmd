@@ -1,0 +1,160 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 7"
+subtitle: "Clase 1: Arboles de clasificación y de regresión"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# **Introducción**
+
+Los árboles de decisión son modelos predictivos basados en un conjunto de reglas
+de división que separan los datos en grupos cada vez más homogéneos.
+
+Son ampliamente utilizados porque:
+
+- No requieren supuestos estadísticos fuertes.
+
+- Capturan relaciones no lineales.
+
+- Son fáciles de interpretar y explicar.
+
+- Funcionan tanto para variables categóricas como numéricas.
+
+# **Árboles de clasificación y regresión**
+Los árboles pueden ser de dos tipos:
+
+- Árboles de clasificación:
+Cuando la variable objetivo es categórica (por ejemplo, pobreza vs no pobreza).
+
+- Árboles de regresión:
+Cuando la variable objetivo es numérica (por ejemplo, ingreso del hogar).
+
+# **Estructura de un árbol de decisión**
+
+Un árbol de decisión se compone de:
+
+- Nodo raíz: inicio del árbol, contiene a todas las observaciones.
+
+- Nodos internos: puntos donde se realiza una división (split) de los datos
+según una variable explicativa.
+
+- Hojas o nodos terminales: segmentos finales donde se entrega la predicción
+(clase o valor).
+
+
+:::{.callout-tip title="Idea Clase"}
+Un árbol segmenta el espacio de las covariables en regiones donde la respuesta es “más
+homogénea” dentro de cada región.
+:::
+
+# Árboles de clasificación
+
+Para clasificación, cada partición se elige minimizando medidas de impureza, como:
+
+1. Índice Gini
+
+$$G = \sum_{k} p_k (1 - p_k)$$
+
+2. Entropía
+
+$$H = - \sum_{k} p_k \log(p_k)$$
+Donde $p_k$ es la proporción de casos en la clase $k$ dentro del nodo.
+
+Las divisiones buscan nodos “puros”, es decir, donde una clase domina claramente.
+
+# Árboles de regresión
+
+En regresión la medida que se minimiza es el Error cuadrático (SSE):
+
+$$SST = \sum (y_i - \bar{y})^2$$
+La partición óptima minimiza la variabilidad dentro de cada nodo.
+
+
+# Ejemplo práctico: clasificación
+
+Usaremos la base base_personas_gasto.rds para predecir si un hogar tiene ingreso bajo.
+
+```{r include=TRUE, echo=TRUE}
+
+library(tidyverse)
+library(rpart)
+datos <- readRDS("../Data/base_personas_gasto.rds")
+
+set.seed(123)
+muestra <- slice_sample(datos, n = 500) %>%
+  mutate(
+    ingreso_bajo = if_else(ingreso_hh < median(ingreso_hh, na.rm = TRUE), "Sí", "No"),
+    ingreso_bajo = factor(ingreso_bajo)
+  ) %>%
+  select(ingreso_bajo, edad, sexo, gasto_hh)
+
+```
+# Ejemplo práctico: clasificación
+
+```{r include=TRUE, echo=TRUE}
+
+head(muestra, 10)
+```
+# Ajuste del árbol de clasificación
+
+```{r include=TRUE, echo=TRUE}
+arbol_clas <- rpart(
+ingreso_bajo ~ edad + sexo + gasto_hh,
+data = muestra,
+method = "class"
+)
+arbol_clas
+```
+
+# Visualización del árbol
+
+
+```{r include=TRUE, echo=TRUE, out.width='100%'}
+library(rpart.plot)
+
+rpart.plot(arbol_clas, type = 2, extra = 104, under = TRUE)
+```
+
+# Interpretación del árbol
+
+:::{.callout-tip title="Interpretación"}
+Cada nodo representa una regla de decisión.
+
+Cada hoja representa una predicción basada en la clase mayoritaria del nodo.
+:::
+
+# Árboles y sobreajuste
+
+Los árboles tienden a sobreajustarse: siguen demasiado de cerca los datos de la muestra.
+
+Por eso se utiliza la poda (pruning) basada en el parámetro de complejidad (CP).
+
+```{r include=TRUE, echo=TRUE, out.width='100%'}
+printcp(arbol_clas)
+
+```
