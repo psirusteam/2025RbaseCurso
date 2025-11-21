@@ -1,0 +1,221 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 7"
+subtitle: "Clase 2: Gradient Boosting Machines (GBM)"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción 
+
+
+Los Gradient Boosting Machines (GBM) son una familia de modelos que combinan muchos árboles pequeños (débiles) para producir un modelo fuerte y altamente predictivo.
+Son uno de los métodos más poderosos en machine learning estructurado.
+
+**¿Por qué funcionan tan bien?**
+
+- Cada árbol intenta corregir los errores del árbol anterior.
+
+- Se ajustan de manera secuencial (boosting).
+
+- Utilizan gradiente descendente para mejorar paso a paso.
+
+- Permiten controlar el sobreajuste mediante learning rate y profundidad.
+
+
+# **¿Qué es el Boosting?**
+
+::: {.callout-tip title="Idea principal"}
+Boosting construye el modelo agregando árboles pequeños, donde cada árbol corrige los errores del modelo anterior.
+:::
+
+Proceso simplificado:
+
+- Empieza con un modelo base (por ejemplo, un valor promedio).
+
+- Ajusta un árbol pequeño a los residuos del modelo anterior.
+
+- Actualiza la predicción del modelo:
+Modelo ← Modelo anterior + (learning rate × árbol nuevo).
+
+- Repite 100–1000 veces.
+
+**Resultado:**
+Un modelo fuerte que combina muchos modelos débiles.
+
+# Componentes importantes
+
+| Componente        | Función                                              |
+| ----------------- | ---------------------------------------------------- |
+| **Learning rate** | Qué tanto aprende cada árbol (0.01–0.1 recomendado). |
+| **n.trees**       | Número de árboles (100–3000).                        |
+| **Depth**         | Profundidad de cada árbol (1–6).                     |
+| **Loss function** | Define el error: MSE, Log-loss, MAE                  |
+| **Subsampling**   | Reduce sobreajuste y mejora estabilidad.             |
+
+
+# Ejemplo práctico en R (Gradient Boosting con gbm)
+
+
+Vamos a predecir ingreso bajo como ejemplo tipo clasificación.
+
+```{r include=TRUE, echo=TRUE}
+
+library(tidyverse)
+library(rpart)
+datos <- readRDS("../Data/base_personas_gasto.rds")
+
+set.seed(123)
+muestra <- slice_sample(datos, n = 1000) %>%
+  mutate(
+ingreso_bajo = if_else(ingreso < median(ingreso, na.rm = TRUE), 1L, 0L)
+  ) %>%
+  select(ingreso_bajo, edad, sexo, gasto_hh, area, pobreza, ingreso)
+
+```
+
+
+# Ejemplo práctico en R (Gradient Boosting con gbm)
+
+```{r include=TRUE, echo=TRUE}
+head(muestra, 10)
+```
+
+# Ajuste del modelo GBM
+
+```{r include=TRUE, echo=TRUE}
+library(gbm)
+
+muestra$sexo   = as.factor(muestra$sexo)
+muestra$area   = as.factor(muestra$area)
+muestra$pobreza = as.factor(muestra$pobreza)
+
+modelo_gbm <- gbm(
+formula = ingreso_bajo ~ pobreza + sexo + area,
+data = muestra,
+distribution = "bernoulli",
+n.trees = 1000,
+interaction.depth = 3,
+shrinkage = 0.05,
+n.minobsinnode = 10
+)
+
+```
+
+# Importancia de variables
+
+```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
+
+summary(modelo_gbm)
+
+```
+
+# Importancia de variables
+
+
+::: {.callout-tip title="Interpretación"}
+La **importancia relativa de variables** en un modelo GBM indica cuánto aporta cada
+variable a reducir el error del modelo a lo largo de todos los árboles construidos.
+
+- **pobreza (≈ 39%)**  
+  Es la variable más influyente. El modelo la usa con mayor frecuencia para mejorar
+  la predicción de ingreso bajo.
+
+- **area (≈ 32%)**  
+  También contribuye de manera importante a separar correctamente los hogares
+  (por ejemplo: urbano vs rural).
+
+- **sexo (≈ 28%)**  
+  Tiene una influencia menor, pero sigue aportando información útil al modelo.
+
+:::
+
+
+# Predicción y comparación con un árbol tradicional
+
+```{r include=TRUE, echo=TRUE}
+library(rpart)
+
+arbol_simple <- rpart(
+ingreso_bajo ~ edad + sexo + gasto_hh,data = muestra,
+method = "class")
+
+# Predicción GBM
+
+pred_gbm <- predict(modelo_gbm, muestra, n.trees = 1000, 
+                    type = "response")
+
+# Predicción árbol simple
+
+pred_arbol <- predict(arbol_simple, muestra, type = "prob")[,2]
+
+cor(pred_gbm, pred_arbol)
+
+
+```
+
+
+# Predicción y comparación con un árbol tradicional
+
+::: {.callout-tip title="Interpretación"}
+correlación ≈ 1
+→ ambos modelos hacen predicciones muy similares.
+
+correlación ≈ 0
+→ las predicciones no tienen relación entre sí.
+
+correlación ≈ -1
+→ predicen exactamente lo contrario.
+
+
+**0.39 = correlación baja-moderada**
+
+→ El GBM está corrigiendo varios errores del árbol simple, por lo que sus probabilidades predichas son diferentes, más complejas y generalmente más precisas.
+:::
+
+# Ventajas y desventajas de GBM
+
+| Ventajas                                | Desventajas                           |
+| --------------------------------------- | ------------------------------------- |
+| Muy alta precisión                      | Puede ser lento                       |
+| Se adapta bien a no-linealidades        | Muchos hiperparámetros                |
+| Excelente para variables tabulares      | Fácil de sobreajustar si no se regula |
+| Maneja bien interacción entre variables | Menos interpretable que un solo árbol |
+
+
+# Resumen de la Clase
+
+| Tema                    | Idea principal                                        | Herramienta                      |
+|------------------------ |------------------------------------------------------ |----------------------------------|
+| Boosting                | Combina muchos árboles pequeños para mejorar error   | —                                |
+| Learning rate           | Controla la velocidad de aprendizaje                 | Parámetro `shrinkage`            |
+| Número de árboles       | A mayor número, mayor capacidad predictiva           | `n.trees`                        |
+| Profundidad             | Controla complejidad e interacciones                 | `interaction.depth`              |
+| GBM clasificación       | Predice categorías                                   | `gbm(distribution=
+"bernoulli")`  |
+| GBM regresión           | Predice valores numéricos                            | `gbm(distribution=
+"gaussian")`   |

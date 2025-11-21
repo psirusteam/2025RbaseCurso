@@ -1,0 +1,206 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 7"
+subtitle: "Clase 4: Redes neuronales"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+
+# Introducción
+
+Las **Redes Neuronales Artificiales (RNA)** son modelos inspirados en el funcionamiento del cerebro humano.  
+Se utilizan para resolver tareas como clasificación, regresión, reconocimiento de patrones, etc.
+
+La unidad básica es la **neurona artificial**, que recibe entradas, las combina y produce una salida.
+
+::: {.callout-tip title="Idea principal"}
+Una red neuronal aprende combinaciones no lineales de las variables mediante capas de neuronas.
+Es especialmente útil cuando las relaciones entre variables son complejas.
+:::
+
+
+# **¿Cómo funciona una neurona?**
+
+Una neurona recibe entradas $x_1$,  $x_2$ ,..., $x_p$
+
+$$z = w_1x_1 + w_2x_2 + ... + w_px_p + b $$
+Luego aplica una función no lineal $g(z)$:
+
+$$\hat{y} = g(z)$$
+Funciones de activaición comunes:
+
+- Sigmoide 
+
+$$g(z) = \frac{1}{1 + e^{-z}}$$
+- ReLU
+
+$$g(z) = max(0,z)$$
+
+# Capas de una red
+Una RNA suele tener:
+
+- Capa de entrada: recibe las variables.
+- Capa(s) oculta(s): hacen transformaciones no lineales.
+- Capa de salida: produce la predicción final.
+
+
+
+
+::: {.callout-tip title="Interpretación"}
+Cada capa aprende representaciones más abstractas de los datos.
+:::
+
+# Entrenamiento: Regla general
+
+Las redes se entrenan minimizando una función de error:
+
+$$L = \sum_{i=1}^{n} (y_i - \hat{y}_i)^2 \quad \text{(regresión)}$$
+o bien:
+
+$$L = - \sum_{i=1}^{n} y_i \log(\hat{y}_i) \quad \text{(clasificación binaria)}$$
+Los pesos se actualizan usando gradiente descendente.
+
+# Ejemplo práctico: clasificación de ingreso bajo
+
+Usaremos tres covariables: sexo, área y gasto del hogar
+
+
+```{r include=TRUE, echo=TRUE}
+library(tidyverse)
+library(neuralnet)
+
+datos <- readRDS("../Data/base_personas_gasto.rds")
+
+set.seed(123)
+muestra <- datos %>%
+slice_sample(n = 600) %>%
+mutate(
+ingreso_bajo = if_else(ingreso < median(ingreso, na.rm = TRUE),
+1, 0),
+sexo = factor(sexo),
+area = factor(area)
+) %>%
+select(ingreso_bajo, sexo, area, gasto)
+```
+
+
+# Ejemplo práctico: clasificación de ingreso bajo
+
+```{r include=TRUE, echo=TRUE}
+head(muestra, 10)
+```
+
+# Transformación de variables categóricas a dummies
+
+```{r include=TRUE, echo=TRUE}
+muestra_nn <- model.matrix(ingreso_bajo ~ ., data = muestra) %>% as.data.frame()
+muestra_nn$ingreso_bajo <- muestra$ingreso_bajo
+
+head(muestra_nn)
+
+```
+
+# Separación en entrenamiento y prueba
+
+```{r include=TRUE, echo=TRUE}
+set.seed(123)
+n <- nrow(muestra_nn)
+id_train <- sample(seq_len(n), 0.7*n)
+
+train <- muestra_nn[id_train, ]
+test  <- muestra_nn[-id_train, ]
+
+train
+```
+
+# Ajuste del modelo de red neuronal
+
+```{r include=TRUE, echo=TRUE}
+
+set.seed(123)
+
+nn_model <- neuralnet(
+ingreso_bajo ~ sexoMujer + area2 + gasto,
+data = train,
+hidden = c(4, 3),  # dos capas ocultas
+act.fct = "logistic",
+linear.output = FALSE
+)
+
+
+```
+
+# Visualización de la red
+
+```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
+
+a <- plot(nn_model)
+a
+```
+
+# Predicción
+
+```{r include=TRUE, echo=TRUE}
+
+pred <- compute(nn_model, test %>% select(-ingreso_bajo))$net.result
+pred_class <- ifelse(pred > 0.5, 1, 0)
+
+table(Observado = test$ingreso_bajo, Predicho = pred_class)
+```
+
+**Exactitud del modelo**
+
+```{r include=TRUE, echo=TRUE}
+mean(pred_class == test$ingreso_bajo)
+```
+
+# Interpretación
+
+::: {.callout-tip title="Interpretación del modelo"}
+
+**Matriz de confusión:**  
+Muestra cuántas observaciones fueron clasificadas correctamente o incorrectamente.
+
+**Exactitud:**  
+Porcentaje de aciertos sobre el total.  
+Ejemplo: 0.74 significa que la red neuronal acierta el **74%** de los casos.
+
+**Nota:**  
+Las redes requieren más datos que otros modelos y pueden sobreajustar fácilmente si se usan muchas capas.
+:::
+
+# Resumen de la clase
+
+| Tema                        | Idea principal                             | Herramienta         |
+|-----------------------------|---------------------------------------------|----------------------|
+| Neurona artificial          | Combina entradas y aplica no linealidad     | —                    |
+| Capas ocultas               | Aprenden representaciones internas          | —                    |
+| Funciones de activación     | Sigmoide, ReLU                     | —                    |
+| Entrenamiento               | Gradiente descendente                       | —                    |
+| Red en R                    | `neuralnet()`                               | neuralnet           |
+| Evaluación                  | Matriz de confusión, exactitud              | table(), mean()      |

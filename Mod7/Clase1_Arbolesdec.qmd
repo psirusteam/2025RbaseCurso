@@ -54,27 +54,26 @@ Cuando la variable objetivo es categórica (por ejemplo, pobreza vs no pobreza).
 - Árboles de regresión:
 Cuando la variable objetivo es numérica (por ejemplo, ingreso del hogar).
 
-# **Estructura de un árbol de decisión**
+# **Cómo funciona un árbol**
 
-Un árbol de decisión se compone de:
+Un árbol se construye dividiendo los datos paso a paso:
 
-- Nodo raíz: inicio del árbol, contiene a todas las observaciones.
+- Nodo raíz: contiene todos los datos.
 
-- Nodos internos: puntos donde se realiza una división (split) de los datos
-según una variable explicativa.
+- Nodos internos: puntos donde se hace una pregunta (split).
 
-- Hojas o nodos terminales: segmentos finales donde se entrega la predicción
-(clase o valor).
+- Hojas: grupos finales donde se hace la predicción.
 
-
-:::{.callout-tip title="Idea Clase"}
-Un árbol segmenta el espacio de las covariables en regiones donde la respuesta es “más
-homogénea” dentro de cada región.
+::: {.callout-tip title="Idea principal"}
+Un árbol divide los datos en grupos cada vez más homogéneos.
 :::
 
-# Árboles de clasificación
+# **Árboles de clasificación**
 
-Para clasificación, cada partición se elige minimizando medidas de impureza, como:
+En clasificación, cada partición se elige para que los grupos queden lo más
+“puros” posible (es decir, que predomine una sola clase).
+
+Las medidas más usadas son:
 
 1. Índice Gini
 
@@ -87,12 +86,17 @@ Donde $p_k$ es la proporción de casos en la clase $k$ dentro del nodo.
 
 Las divisiones buscan nodos “puros”, es decir, donde una clase domina claramente.
 
-# Árboles de regresión
+# **Árboles de regresión**
 
-En regresión la medida que se minimiza es el Error cuadrático (SSE):
+En regresión, en lugar de pureza de clases, nos interesa que los valores de la
+variable objetivo sean similares dentro de cada nodo.
 
 $$SST = \sum (y_i - \bar{y})^2$$
-La partición óptima minimiza la variabilidad dentro de cada nodo.
+La regla es:
+
+Buscar particiones que minimicen el error cuadrático medio dentro de cada nodo.
+
+En cada hoja, la predicción es el promedio de la variable objetivo en ese grupo.
 
 
 # Ejemplo práctico: clasificación
@@ -108,10 +112,10 @@ datos <- readRDS("../Data/base_personas_gasto.rds")
 set.seed(123)
 muestra <- slice_sample(datos, n = 500) %>%
   mutate(
-    ingreso_bajo = if_else(ingreso_hh < median(ingreso_hh, na.rm = TRUE), "Sí", "No"),
+    ingreso_bajo = if_else(ingreso < median(ingreso, na.rm = TRUE), "Sí", "No"),
     ingreso_bajo = factor(ingreso_bajo)
   ) %>%
-  select(ingreso_bajo, edad, sexo, gasto_hh)
+  select(ingreso_bajo, edad, sexo, gasto_hh, area, pobreza, ingreso)
 
 ```
 # Ejemplo práctico: clasificación
@@ -122,23 +126,35 @@ head(muestra, 10)
 ```
 # Ajuste del árbol de clasificación
 
+Ahora construiremos un árbol que predice si **el hogar tiene ingreso bajo (`ingreso_hh`)** usando variables socioeconómicas.
+
 ```{r include=TRUE, echo=TRUE}
 arbol_clas <- rpart(
-ingreso_bajo ~ edad + sexo + gasto_hh,
+ingreso_bajo ~ sexo + area + pobreza,
 data = muestra,
 method = "class"
 )
-arbol_clas
+
 ```
 
+
+# Ajuste del árbol de clasificación
+
+```{r include=TRUE, echo=TRUE}
+arbol_clas
+```
 # Visualización del árbol
 
 
-```{r include=TRUE, echo=TRUE, out.width='100%'}
+```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
 library(rpart.plot)
 
-rpart.plot(arbol_clas, type = 2, extra = 104, under = TRUE)
+rpart.plot(arbol_clas, type = 2, extra = 104, under = TRUE,
+main = "Árbol de clasificación: ingreso bajo")
+
 ```
+
+
 
 # Interpretación del árbol
 
@@ -150,11 +166,71 @@ Cada hoja representa una predicción basada en la clase mayoritaria del nodo.
 
 # Árboles y sobreajuste
 
-Los árboles tienden a sobreajustarse: siguen demasiado de cerca los datos de la muestra.
+Los árboles tienden a sobreajustarse (se vuelven muy complejos y se adaptan demasiado
+a la muestra).
 
-Por eso se utiliza la poda (pruning) basada en el parámetro de complejidad (CP).
+Para controlar esto se usa la poda (pruning), basada en el parámetro de complejidad (CP):
 
-```{r include=TRUE, echo=TRUE, out.width='100%'}
+# Árboles y sobreajuste
+
+```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
 printcp(arbol_clas)
 
 ```
+
+
+# **Ejemplo práctico: árbol de regresión**
+
+Ahora construiremos un árbol que predice el **ingreso del hogar (`ingreso_hh`)** usando
+variables socioeconómicas.
+
+
+```{r include=TRUE, echo=TRUE}
+arbol_reg <- rpart(
+  ingreso ~ sexo + area + pobreza,
+  data = muestra,
+  method = "anova"    # <-- regresión
+)
+
+```
+
+# **Ejemplo práctico: árbol de regresión**
+
+```{r include=TRUE, echo=TRUE}
+arbol_reg 
+```
+
+
+# Visualización del árbol de regresión
+
+```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
+library(rpart.plot)
+
+rpart.plot(arbol_reg,type = 2,under = TRUE,
+           main = "Árbol de regresión: ingreso del hogar",
+cex = 1.1
+)
+
+```
+
+# Interpretación del árbol de regresión
+
+::: {.callout-tip title="Interpretación (regresión)"}
+
+Cada nodo representa una regla usada para dividir los datos según valores numéricos.
+
+Cada hoja muestra el promedio del ingreso de los hogares en ese grupo.
+
+El árbol escoge las divisiones que reducen la variabilidad dentro de los nodos.
+:::
+
+# Conclusiones de la Clase
+
+| Tema                         | Idea principal                                                 | Herramienta                         |
+|----------------------------- |--------------------------------------------------------------- |-------------------------------------|
+| Árbol de clasificación       | Predice categorías; busca nodos puros (Gini / Entropía)       | `rpart(method = "class")`           |
+| Árbol de regresión           | Predice valores numéricos; minimiza la variabilidad interna   | `rpart(method = "anova")`           |
+| Estructura del árbol         | Nodo raíz → nodos internos → hojas; reglas de decisión        | —                                   |
+| Criterios de división        | Clasificación: pureza; Regresión: menor variabilidad          | Automático en `rpart`               |
+| Sobreajuste                  | Los árboles pueden crecer demasiado                           | —                                   |
+| Poda (pruning)               | Controla el tamaño del árbol mediante el parámetro CP         | `printcp()`              |

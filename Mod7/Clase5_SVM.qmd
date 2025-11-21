@@ -1,0 +1,308 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 7"
+subtitle: "Clase 5: Máquinas de soporte Vectorial"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+Las Máquinas de Soporte Vectorial (SVM) son modelos diseñados originalmente para
+**clasificación binaria**, es decir, para separar el espacio de datos en dos clases:
+$$
+y_i \in \{-1, +1\}.
+$$
+
+
+La idea esencial es encontrar una **frontera óptima** que divida las dos clases y que
+maximice el **margen**, es decir, la distancia entre la frontera y las observaciones más cercanas.
+
+::: {.callout-tip title="Idea principal"}
+Una SVM busca el hiperplano que mejor separa las clases, asegurando el mayor margen.
+Las observaciones que definen esa frontera se llaman **vectores de soporte**.
+:::
+
+
+# SVM lineal: intuición geométrica
+
+Una SVM lineal busca un hiperplano de la forma:
+
+$$
+f(x) = w^\top x + b = 0.
+$$
+
+La regla de predicción es:
+
+$$
+\hat{y} = \text{sign}(w^\top x + b).
+$$
+
+# SVM lineal: intuición geométrica
+
+El margen geométrico es:
+
+$$
+\text{margen} = \frac{2}{\lVert w \rVert}.
+$$
+
+::: {.callout-tip title="Interpretación"}
+Maximizar el margen equivale a minimizar $$(\lVert w \rVert)$$,
+lo que da una frontera más estable y generalizable.
+:::
+
+# Formulación SVM lineal (caso separable)
+
+$$
+\min_{w, b} \quad \frac{1}{2} \lVert w \rVert^2
+$$
+
+sujeto a:
+
+$$
+y_i (w^\top x_i + b) \ge 1,\quad i=1,\dots,n.
+$$
+
+- Asegura que cada observación quede del lado correcto.
+- Impone que esté fuera de la banda del margen.
+
+Los puntos que “tocan” la banda son los **vectores de soporte**.
+
+# Caso no separable: variables de holgura
+Cuando las clases no se pueden separar perfectamente, añadimos $$(\xi_i)$$:
+
+$$
+\min_{w,b,\xi} 
+\quad \frac{1}{2}\lVert w\rVert^2
++ C \sum_{i=1}^n \xi_i
+$$
+
+sujeto a:
+
+$$
+y_i (w^\top x_i + b) \ge 1 - \xi_i,\qquad \xi_i \ge 0.
+$$
+
+# Caso no separable: variables de holgura
+
+::: {.callout-tip title="El parámetro C"}
+- **C grande** → penaliza mucho los errores → modelo rígido (riesgo de sobreajuste).  
+- **C pequeño** → permite más errores → modelo flexible con mejor generalización.
+:::
+
+# Versión dual y vectores de soporte
+
+La SVM puede escribirse como:
+
+$$
+f(x) = \sum_{i=1}^n \alpha_i y_i \, x_i^\top x + b,
+$$
+
+donde los **vectores de soporte** son los que cumplen:
+
+$$
+\alpha_i > 0.
+$$
+
+
+# SVM con kernels
+
+Cuando las clases no pueden separarse linealmente, usamos **kernels**:
+
+$$
+K(x_i, x_j) = \phi(x_i)^\top \phi(x_j).
+$$
+
+La función de decisión se convierte en:
+
+$$
+f(x) = \sum_{i=1}^n \alpha_i y_i \, K(x_i, x) + b.
+$$
+
+# SVM con kernels
+
+**Kernels comunes:**
+
+- Lineal  
+  $$
+  K(x_i,x_j)=x_i^\top x_j
+  $$
+
+- Polinómico  
+ $$
+  (\gamma x_i^\top x_j + r)^d
+ $$
+
+- Radial (RBF)  
+ $$
+  K(x_i,x_j)=\exp(-\gamma\lVert x_i - x_j\rVert^2)
+ $$
+ 
+ 
+# SVM con kernels
+
+**Kernels comunes:**
+
+::: {.callout-tip title="Kernel radial (RBF)"}
+El kernel más usado.  
+Permite fronteras curvas controladas por \(\gamma\).
+:::
+
+
+# Ejemplo práctico en R: clasificación binaria con SVM
+
+Vamos a predecir si un hogar tiene **ingreso bajo** usando: sexo, área ,gasto  
+
+```{r include=TRUE, echo=TRUE}
+library(tidyverse)
+library(e1071)
+
+datos <- readRDS("../Data/base_personas_gasto.rds")
+set.seed(123)
+muestra <- datos %>%
+  slice_sample(n = 600) %>%
+  mutate(
+    ingreso_bajo = if_else(
+      ingreso < median(ingreso, na.rm = TRUE),
+      "Sí", "No"
+    ),
+    ingreso_bajo = factor(ingreso_bajo),
+    sexo = factor(sexo),
+    area = factor(area)
+  ) %>%
+  select(ingreso_bajo, sexo, area, gasto, edad)
+```
+
+# Ejemplo práctico en R: clasificación binaria con SVM
+
+```{r include=TRUE, echo=TRUE}
+
+head(muestra, 10) 
+```
+
+# Separación en entrenamiento y prueba
+
+```{r include=TRUE, echo=TRUE}
+set.seed(123)
+n <- nrow(muestra)
+id_train <- sample(seq_len(n), 0.7*n)
+
+train <- muestra[id_train, ]
+test  <- muestra[-id_train, ]
+
+table(train$ingreso_bajo)
+table(test$ingreso_bajo)
+
+```
+
+# Ajuste del modelo SVM (kernel radial)
+
+
+```{r include=TRUE, echo=TRUE}
+svm_model <- svm(
+ingreso_bajo ~ sexo + area + gasto,
+data   = train,
+kernel = "radial",
+cost   = 1,
+gamma  = 0.1,
+scale  = TRUE
+)
+
+
+
+```
+
+# Predicciones y evaluación
+
+```{r include=TRUE, echo=TRUE}
+pred_svm <- predict(svm_model, newdata = test)
+
+conf_matrix <- table(Observado = test$ingreso_bajo,
+Predicho = pred_svm)
+conf_matrix
+
+exactitud <- mean(pred_svm == test$ingreso_bajo)
+exactitud
+```
+
+# Interpretación
+
+::: {.callout-tip title="Interpretación del resultado SVM"}
+**Matriz de confusión**  
+Muestra cuántos hogares fueron clasificados correctamente o incorrectamente.
+
+**Exactitud**  
+Proporción total de aciertos del modelo en el conjunto de prueba.  
+Por ejemplo, una exactitud de 0.76 indica que el modelo acierta el **76%** de las predicciones.
+:::
+
+# Comparación rápida: SVM lineal vs SVM radial
+
+```{r include=TRUE, echo=TRUE}
+svm_linear <- svm(
+ingreso_bajo ~ sexo + area + gasto,
+data   = train,
+kernel = "linear",
+cost   = 1,
+scale  = TRUE
+)
+
+pred_lin <- predict(svm_linear, newdata = test)
+
+```
+
+# Comparación rápida: SVM lineal vs SVM radial
+
+
+```{r include=TRUE, echo=TRUE}
+
+
+tibble(
+modelo    = c("SVM radial", "SVM lineal"),
+exactitud = c(mean(pred_svm == test$ingreso_bajo),
+mean(pred_lin == test$ingreso_bajo))
+)
+
+```
+
+::: {.callout-tip title="Interpretación"}
+
+SVM lineal funciona si la frontera es casi recta.
+
+SVM radial funciona mejor cuando la frontera es curva.
+:::
+
+# Resumen de la clase
+
+| Tema                         | Idea principal                                        | Herramienta      |
+|----------------------------- |------------------------------------------------------ |------------------|
+| SVM binaria                  | Separa dos clases con un hiperplano                  | —                |
+| Margen                       | Distancia entre frontera y puntos más cercanos        | —                |
+| Vectores de soporte          | Observaciones que definen la frontera                | —                |
+| Kernel radial                | Permite fronteras no lineales                        | `kernel="radial"`|
+| Evaluación del modelo        | Matriz de confusión y exactitud                      | `table()`, `mean()` |
+
