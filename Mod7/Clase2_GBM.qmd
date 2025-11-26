@@ -86,15 +86,12 @@ Vamos a predecir ingreso bajo como ejemplo tipo clasificación.
 ```{r include=TRUE, echo=TRUE}
 
 library(tidyverse)
-library(rpart)
-datos <- readRDS("../Data/base_personas_gasto.rds")
 
-set.seed(123)
-muestra <- slice_sample(datos, n = 1000) %>%
+datos <- readRDS("../Data/base_personas_gasto.rds") %>%
   mutate(
-ingreso_bajo = if_else(ingreso < median(ingreso, na.rm = TRUE), 1L, 0L)
-  ) %>%
-  select(ingreso_bajo, edad, sexo, gasto_hh, area, pobreza, ingreso)
+    pobreza3 = if_else(pobreza2 %in% c(1,2),1,0),
+  ) %>% select(id_hogar,area,pobreza3, ingreso, sexo,
+               etnia,edad_hh, anoest_hh)
 
 ```
 
@@ -102,26 +99,22 @@ ingreso_bajo = if_else(ingreso < median(ingreso, na.rm = TRUE), 1L, 0L)
 # Ejemplo práctico en R (Gradient Boosting con gbm)
 
 ```{r include=TRUE, echo=TRUE}
-head(muestra, 10)
+head(datos, 10)
 ```
 
-# Ajuste del modelo GBM
+# Ajuste del modelo GBM para ingreso
 
 ```{r include=TRUE, echo=TRUE}
 library(gbm)
 
-muestra$sexo   = as.factor(muestra$sexo)
-muestra$area   = as.factor(muestra$area)
-muestra$pobreza = as.factor(muestra$pobreza)
-
-modelo_gbm <- gbm(
-formula = ingreso_bajo ~ pobreza + sexo + area,
-data = muestra,
-distribution = "bernoulli",
+modelo_gbm_ing <- gbm(
+formula = ingreso ~ area + sexo + etnia + edad_hh + anoest_hh,
+data = datos,
+distribution = "gaussian", # regresión
 n.trees = 1000,
 interaction.depth = 3,
 shrinkage = 0.05,
-n.minobsinnode = 10
+n.minobsinnode = 20
 )
 
 ```
@@ -130,7 +123,7 @@ n.minobsinnode = 10
 
 ```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
 
-summary(modelo_gbm)
+summary(modelo_gbm_ing)
 
 ```
 
@@ -138,65 +131,187 @@ summary(modelo_gbm)
 
 
 ::: {.callout-tip title="Interpretación"}
+
 La **importancia relativa de variables** en un modelo GBM indica cuánto aporta cada
-variable a reducir el error del modelo a lo largo de todos los árboles construidos.
+variable a reducir el error del modelo a lo largo de todos los árboles.
 
-- **pobreza (≈ 39%)**  
-  Es la variable más influyente. El modelo la usa con mayor frecuencia para mejorar
-  la predicción de ingreso bajo.
+- **Años de estudio del hogar (`anoest_hh`, ≈ 53%)**  
+  Es la variable más influyente. El nivel educativo del hogar es el factor que más ayuda a explicar diferencias en el ingreso.
 
-- **area (≈ 32%)**  
-  También contribuye de manera importante a separar correctamente los hogares
-  (por ejemplo: urbano vs rural).
+- **Edad del hogar (`edad_hh`, ≈ 31%)**  
+  También tiene un peso importante: hogares en distintas etapas del ciclo de vida presentan niveles de ingreso distintos.
 
-- **sexo (≈ 28%)**  
-  Tiene una influencia menor, pero sigue aportando información útil al modelo.
+- **Sexo (`sexo`, ≈ 9%)**  
+  Aporta información adicional, pero con mucho menos peso que educación y edad.
+
+- **Área (`area`, ≈ 5%) y etnia (`etnia`, ≈ 2%)**  
+  Tienen una influencia menor en el modelo; ayudan a refinar la predicción, pero no son las variables principales.
 
 :::
 
 
-# Predicción y comparación con un árbol tradicional
-
+# Comparación con un árbol de regresión
 ```{r include=TRUE, echo=TRUE}
 library(rpart)
+arbol_ing <- rpart(
+ingreso ~ area + sexo + etnia + edad_hh + anoest_hh,
+data = datos,
+method = "anova"   # regresión
+)
 
-arbol_simple <- rpart(
-ingreso_bajo ~ edad + sexo + gasto_hh,data = muestra,
-method = "class")
+# Predicciones
 
-# Predicción GBM
+pred_gbm_ing   <- predict(modelo_gbm_ing, datos, n.trees = 1000)
+pred_arbol_ing <- predict(arbol_ing, datos)
 
-pred_gbm <- predict(modelo_gbm, muestra, n.trees = 1000, 
-                    type = "response")
+# Función para RMSE
 
-# Predicción árbol simple
+rmse <- function(obs, pred) sqrt(mean((obs - pred)^2))
 
-pred_arbol <- predict(arbol_simple, muestra, type = "prob")[,2]
+rmse_gbm   <- rmse(datos$ingreso, pred_gbm_ing)
+rmse_arbol <- rmse(datos$ingreso, pred_arbol_ing)
 
-cor(pred_gbm, pred_arbol)
+```
+# Comparación con un árbol de regresión
+```{r include=TRUE, echo=TRUE}
 
+tibble(
+Modelo = c("Árbol simple", "GBM"),
+RMSE   = c(rmse_arbol, rmse_gbm)
+)
+```
+
+::: {.callout-tip title="Interpretación comparación (ingreso)"}
+El RMSE mide el error promedio en unidades de ingreso:
+
+Un RMSE menor indica un modelo má preciso.
+
+Usualmente el GBM logra un RMSE más bajo que el árbol simple,
+mostrando que captura mejor las relaciones entre ingreso y variables sociodemográficas.
+:::
+
+# Zoom a las predicciones del GBM (ingreso)
+
+```{r include=TRUE, echo=TRUE}
+
+plot_gbm <- datos %>%
+mutate(
+ingreso_obs  = ingreso,
+ingreso_pred = pred_gbm_ing
+)
+
+head(plot_gbm, 6)
 
 ```
 
 
-# Predicción y comparación con un árbol tradicional
+# Zoom a las predicciones del GBM (ingreso)
 
-::: {.callout-tip title="Interpretación"}
-correlación ≈ 1
-→ ambos modelos hacen predicciones muy similares.
+```{r include=TRUE, echo=TRUE, include=FALSE}
 
-correlación ≈ 0
-→ las predicciones no tienen relación entre sí.
+gra1 <- ggplot(plot_gbm, aes(x = ingreso_pred, y = ingreso_obs)) +
+  geom_point(alpha = 0.4, size = 1) +
+  scale_y_log10() +
+  scale_x_log10() +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(
+    title = "Ingreso observado vs ingreso predicho (GBM) – Escala logarítmica",
+    x = "Ingreso predicho (log)",
+    y = "Ingreso observado (log)"
+  ) +
+  theme_minimal()
 
-correlación ≈ -1
-→ predicen exactamente lo contrario.
+```
 
 
-**0.39 = correlación baja-moderada**
+```{r include=TRUE, echo=TRUE}
 
-→ El GBM está corrigiendo varios errores del árbol simple, por lo que sus probabilidades predichas son diferentes, más complejas y generalmente más precisas.
+gra1 
+
+```
+# Zoom a las predicciones del GBM (ingreso)
+
+::: {.callout-note title="Interpretación del gráfico (GBM – ingreso)"}
+- Cada punto es un hogar, en **escala logarítmica** de ingreso.  
+- En el eje X está el **ingreso predicho por el GBM** y en el eje Y el **ingreso observado**.  
+- La nube de puntos tiene una clara **tendencia creciente**: a mayor ingreso predicho, mayor ingreso observado.  
+- La recta azul resume esa relación.  
+- La dispersión alrededor de la recta muestra que el modelo no es perfecto, pero sí captura razonablemente el patrón general del ingreso.
 :::
 
+
+# Ajuste del modelo GBM para pobreza
+
+```{r include=TRUE, echo=TRUE}
+
+modelo_gbm_pob <- gbm(
+formula = pobreza3 ~ area + sexo + etnia + edad_hh + anoest_hh,
+data = datos,
+distribution = "bernoulli",   # clasificación binaria
+n.trees = 1000,
+interaction.depth = 3,
+shrinkage = 0.05,
+n.minobsinnode = 20
+)
+```
+
+# Ajuste del modelo GBM para pobreza
+```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
+summary(modelo_gbm_pob)
+
+```
+# Ajuste del modelo GBM para pobreza
+
+::: {.callout-tip title="Importancia (pobreza)"}
+La importancia relativa indica cuánto ayuda cada variable a reducir el error al
+clasificar hogares pobres (1) y no pobres (0).
+
+Las variables más importantes son las que el GBM usa con mayor frecuencia para separar estos dos grupos.
+:::
+
+# Zoom a las predicciones del GBM (pobreza)
+
+```{r include=TRUE, echo=TRUE}
+# Probabilidad predicha de ser pobre
+prob_gbm_pob <- predict(
+modelo_gbm_pob,
+datos,
+n.trees = 1000,
+type = "response"
+)
+# Clasificación 0/1 usando umbral 0.5
+clase_gbm_pob <- if_else(prob_gbm_pob > 0.5, 1, 0)
+
+resultados_pob <- datos %>%
+mutate(
+prob_pobre_gbm = prob_gbm_pob,
+pobreza_pred_gbm = clase_gbm_pob
+) %>%
+select(pobreza3, prob_pobre_gbm, pobreza_pred_gbm,
+area, sexo, edad_hh, anoest_hh)
+```
+# Zoom a las predicciones del GBM (pobreza)
+
+```{r include=TRUE, echo=TRUE}
+head(resultados_pob, 10)
+
+```
+
+# Zoom a las predicciones del GBM (pobreza)
+
+::: {.callout-note title="¿Qué vemos en esta tabla?"}
+
+- pobreza3: pobreza observada (0 = no pobre, 1 = pobre).
+
+- prob_pobre_gbm: probabilidad estimada de ser pobre según el GBM.
+
+- pobreza_pred_gbm: clasificación final según el umbral 0.5.
+
+El GBM asigna una probabilidad distinta a cada hogar, combinando la información
+de área, sexo, edad, educación y etnia.
+A partir de esa probabilidad se decide si el hogar se clasifica como pobre o no pobre.
+
+:::
 # Ventajas y desventajas de GBM
 
 | Ventajas                                | Desventajas                           |
@@ -209,13 +324,10 @@ correlación ≈ -1
 
 # Resumen de la Clase
 
-| Tema                    | Idea principal                                        | Herramienta                      |
-|------------------------ |------------------------------------------------------ |----------------------------------|
-| Boosting                | Combina muchos árboles pequeños para mejorar error   | —                                |
-| Learning rate           | Controla la velocidad de aprendizaje                 | Parámetro `shrinkage`            |
-| Número de árboles       | A mayor número, mayor capacidad predictiva           | `n.trees`                        |
-| Profundidad             | Controla complejidad e interacciones                 | `interaction.depth`              |
-| GBM clasificación       | Predice categorías                                   | `gbm(distribution=
-"bernoulli")`  |
-| GBM regresión           | Predice valores numéricos                            | `gbm(distribution=
-"gaussian")`   |
+| Tema              | Idea principal                              | Herramienta                          |
+|-------------------|----------------------------------------------|--------------------------------------|
+| Learning rate     | Controla la velocidad de aprendizaje         | `shrinkage`                          |
+| Número de árboles | A mayor número, mayor capacidad predictiva   | `n.trees`                            |
+| Profundidad       | Controla complejidad e interacciones         | `interaction.depth`                  |
+| GBM clasificación | Predice categorías                           | `gbm(distribution = "bernoulli")`    |
+| GBM regresión     | Predice valores numéricos                    | `gbm(distribution = "gaussian")`     |

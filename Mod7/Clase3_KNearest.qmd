@@ -54,14 +54,17 @@ k-NN clasifica una observación según las características de sus vecinos más 
 
 Pasos generales:
 
-1. Tenemos un conjunto de datos con variables explicativas y una respuesta.
-2. Para una nueva observación:
-   - Calculamos su **distancia** a todas las observaciones de entrenamiento.
-   - Identificamos los **k vecinos más cercanos**.
-3. Clasificación:
-   - Asignamos la clase más frecuente entre los k vecinos.
-4. Regresión:
-   - Tomamos el promedio de la respuesta de los k vecinos.
+1. Tomamos una observación nueva.
+
+2. Medimos qué tan cerca está de cada persona del conjunto de entrenamiento.
+
+3. Ordenamos por distancia.
+
+4. Nos quedamos con los k más cercanos.
+
+5. Para clasificación, hacemos un voto de mayoría.
+
+6. Para regresión, sacamos un promedio.
 
 # Distancia y normalización
 
@@ -98,58 +101,45 @@ En la práctica:
 - Se prueban varios valores de k y se elige el que da mejor desempeño
   (ej. mejor exactitud en validación cruzada).
 
-# Ejemplo práctico: clasificación con k-NN
+# Ejemplo práctico: k-NN para regresión
 
-Usaremos la base `base_personas_gasto.rds` para predecir si un hogar tiene
-**ingreso bajo** (por debajo de la mediana).
+```{r include=TRUE, echo=TRUE, include=FALSE}
 
-```{r include=TRUE, echo=TRUE}
 library(tidyverse)
-library(class)
-datos <- readRDS("../Data/base_personas_gasto.rds")
-set.seed(123)
 
-muestra <- datos %>%
-  slice_sample(n = 400) %>%
+datos <- readRDS("../Data/base_personas_gasto.rds") %>%
   mutate(
-    ingreso_bajo = if_else(
-      ingreso < median(ingreso, na.rm = TRUE),
-      "Sí", "No"
-    ),
-    ingreso_bajo = factor(ingreso_bajo)
-  ) %>%
-  select(ingreso_bajo, edad, sexo, gasto_hh, area, pobreza, ingreso)
+    pobreza3 = if_else(pobreza2 %in% c(1,2),1,0),
+  ) %>% select(id_hogar,area,pobreza3, ingreso, sexo,
+               etnia,edad_hh, anoest_hh)
+
 ```
 
-# Ejemplo práctico: clasificación con k-NN
 
-Usaremos la base `base_personas_gasto.rds` para predecir si un hogar tiene
-**ingreso bajo** (por debajo de la mediana).
+Usaremos la base `base_personas_gasto.rds` para predecir el **ingreso del hogar**
+como una variable numérica, a partir de sus características sociodemográficas.
 
 ```{r include=TRUE, echo=TRUE}
 
-head(muestra, 10) 
+head(datos, 10) 
 ```
 
 # Separación en entrenamiento y prueba
 
 Una vez que tenemos las covariables en formato numérico, dividimos la información
 en un conjunto de **entrenamiento** (para ajustar el modelo) y otro de **prueba**
-(para evaluar su desempeño fuera de la muestra).
+(para evaluar su desempeño).
 
-
-# Separación en entrenamiento y prueba
 
 ```{r include=TRUE, echo=TRUE}
 
 set.seed(123)
-n <- nrow(muestra) # N° observaciones
+n <- nrow(datos)
 id_train <- sample(seq_len(n), size = 0.7 * n)
 
-train <- muestra[id_train, ]
-test  <- muestra[-id_train, ]
-table(train$ingreso_bajo)
-table(test$ingreso_bajo)
+train <- datos[id_train, ]
+test <- datos[-id_train, ]
+
 
 ```
 
@@ -168,12 +158,14 @@ A continuación realizamos la transformación y la estandarización de las covar
 ```{r include=TRUE, echo=TRUE}
 
 # Matrices numéricas (model.matrix crea dummies para las categóricas)
-x_train <- model.matrix(~ sexo + gasto_hh + area, data = train)[, -1]
-x_test  <- model.matrix(~ sexo + gasto_hh + area, data = test)[, -1]
+x_train <- model.matrix(~ area + sexo + etnia + edad_hh + anoest_hh, 
+                        data = train)[, -1]
+x_test  <- model.matrix(~ area + sexo + etnia + edad_hh + anoest_hh, 
+                        data = test)[, -1]
 
 # Variable respuesta
-y_train <- train$ingreso_bajo
-y_test  <- test$ingreso_bajo
+y_train <- train$ingreso
+y_test  <- test$ingreso
 
 ```
 
@@ -189,72 +181,177 @@ categóricas (`sexo`, `area`) en dummies y luego estandarizamos.
 
 ```{r include=TRUE, echo=TRUE}
 
-x_train_scaled <- scale(x_train)
-x_test_scaled  <- scale(
+x_train_s <- scale(x_train)
+x_test_s  <- scale(
   x_test,
-  center = attr(x_train_scaled, "scaled:center"),
-  scale  = attr(x_train_scaled, "scaled:scale")
+  center = attr(x_train_s, "scaled:center"),
+  scale  = attr(x_train_s, "scaled:scale")
+)
+
+```
+
+
+# Zoom: ¿QUIÉNES SON LOS 5 VECINOS MÁS CERCANOS?
+
+Antes de usar k-NN automáticamente, haremos el cálculo manual paso a paso para entender exactamente qué hace el algoritmo:
+
+
+```{r include=TRUE, echo=TRUE}
+
+# Elegimos una observación de prueba
+i <- 59
+obs <- x_test_s[i, , drop=FALSE]
+
+# Calculamos su distancia a todas las observaciones 
+# del conjunto de entrenamiento.
+distancias <- apply(x_train_s, 1, function(fila) sqrt(sum((fila - obs)^2)))
+
+summary(distancias)
+
+```
+
+
+# Zoom: ¿QUIÉNES SON LOS 5 VECINOS MÁS CERCANOS?
+
+```{r include=TRUE, echo=TRUE}
+
+# Ordenamos
+vecinos <- order(distancias)[1:5]
+
+# Tabla de los 5 vecinos
+
+tabla_vecinos <- train[vecinos,] %>% mutate(distancia = distancias[vecinos])
+tabla_vecinos
+
+
+```
+
+# Zoom: ¿QUIÉNES SON LOS 5 VECINOS MÁS CERCANOS?
+
+```{r include=TRUE, echo=TRUE}
+
+# Predicción de ingreso a partir de los 5 vecinos (promedio)
+ingreso_pred_i <- mean(tabla_vecinos$ingreso)
+
+# Ingreso observado para esa observación del test
+ingreso_obs_i <- y_test[i]
+
+c(
+  ingreso_observado = ingreso_obs_i,
+  ingreso_predicho  = ingreso_pred_i
 )
 
 ```
 
 # Ajustar k-NN y evaluar
 
-```{r include=TRUE, echo=TRUE}
+Ahora que vimos **paso a paso** cómo se construye el vecindario de 5 vecinos,
+usamos la función `knn.reg()` para obtener la predicción de ingreso para **todos**
+los hogares del conjunto de prueba.
 
+```{r include=TRUE, echo=TRUE}
+library(FNN)
 set.seed(123)
-pred_knn5 <- knn(
-  train = x_train_scaled,
-  test  = x_test_scaled,
-  cl    = y_train,
+pred_knn <- knn.reg(
+  train = x_train_s,
+  test  = x_test_s,
+  y    = y_train,
   k     = 5
 )
+
+ingreso_pred <- pred_knn$pred
 ```
 
 # Ajustar k-NN y evaluar
 
 ```{r include=TRUE, echo=TRUE}
+rmse <- function(obs, pred) sqrt(mean((obs - pred)^2))
 
-conf_matrix <- table(Observado = y_test, Predicho = pred_knn5)
-conf_matrix
+rmse_knn5 <- rmse(y_test, ingreso_pred)
+rmse_knn5
+
+
 ```
 
-::: {.callout-tip title="Interpretación del resultado k-NN"}
-**Matriz de confusión (`conf_matrix`)**  
-Resume cuántos casos fueron clasificados correctamente o incorrectamente:
-- **47** verdaderos negativos (No → No)  
-- **39** verdaderos positivos (Sí → Sí)  
-- **21** falsos positivos (No → Sí)  
-- **13** falsos negativos (Sí → No)
-
+::: {.callout-tip title="Interpretación"}
+El RMSE mide el error promedio de las predicciones de ingreso del modelo k-NN.
+A menor RMSE, mejor capacidad predictiva.
 :::
-# Ajustar k-NN y evaluar
+
+# k-NN para pobreza (clasificación
 
 ```{r include=TRUE, echo=TRUE}
-exatitud <- mean(pred_knn5 == y_test)
-exatitud
+
+# Variable respuesta (clasificación)
+y_train_p <- factor(train$pobreza3)
+y_test_p  <- factor(test$pobreza3)
+
+library(class)
+set.seed(123)
+
+pred_knn_pob <- knn(
+  train = x_train_s,
+  test  = x_test_s,
+  cl    = y_train_p,
+  k     = 5
+)
+
+
 ```
-::: {.callout-tip title="Interpretación del resultado k-NN"}
-**Exactitud (`mean(pred_knn5 == y_test)`)**  
-Mide la proporción total de aciertos del modelo.  
-➡️ **Exactitud = 0.72** → El modelo acierta el **72%** de las predicciones.
+
+# Evaluación del modelo (clasificación)
+
+**Matriz de confusión**
+
+```{r include=TRUE, echo=TRUE}
+
+# Variable respuesta (clasificación)
+confusion_pob <- table(Observado = y_test_p, Predicho = pred_knn_pob)
+confusion_pob
+
+```
+
+**Exactitud**
+
+```{r include=TRUE, echo=TRUE}
+
+exactitud_pob <- mean(pred_knn_pob == y_test_p)
+exactitud_pob
+
+```
+
+# Evaluación del modelo (clasificación)
+
+::: {.callout-tip title="Interpretación"}
+
+- La matriz de confusión muestra cuántos hogares pobres y no pobres fueron correctamente clasificados.
+
+- La exactitud indica la proporción total de predicciones correctas del modelo k-NN.
+
+- Como es una tarea de clasificación binaria, no usamos RMSE, sino métricas basadas en aciertos.
+
 :::
+
 
 # Ventajas y desventajas de k-NN
 
-| Ventajas                                | Desventajas                                        |
-| --------------------------------------- | -------------------------------------------------- |
-| Método simple e intuitivo               | Costoso en cómputo con bases grandes               |
-| No requiere suponer una forma funcional | Sensible a la escala de las variables              |
-| Se adapta bien a relaciones no lineales | Difícil de interpretar (no hay “modelo” explícito) |
-| Fácil de implementar y explicar         | Afectado por variables irrelevantes y ruido        |
+| **Ventajas**                                   | **Desventajas**                                                         |
+| ---------------------------------------------- | ----------------------------------------------------------------------- |
+| Muy simple de entender e implementar           | Computacionalmente costoso con bases grandes                            |
+| No asume una forma funcional del modelo        | Depende fuertemente de la escala → requiere normalizar                  |
+| Captura relaciones no lineales automáticamente | Sensible al ruido y a variables irrelevantes                            |
+| Se adapta bien a formas complejas de decisión  | Difícil de interpretar (no hay modelo explícito)                        |
+| Útil para clasificación y regresión            | Rendimiento disminuye en alta dimensionalidad (curse of dimensionality) |
 
 # Conclusiones de la clase
 
-| Tema                      | Idea principal                                                 | Herramienta              |
-|-------------------------- |--------------------------------------------------------------- |--------------------------|
-| k vecinos más cercanos    | Clasifica usando la información de los vecinos más cercanos   | `class::knn()`           |
-| Distancia                 | Define qué tan “cerca” están dos observaciones                | Distancia Euclídea       |
-| Normalización             | Evita que una variable domine la distancia                    | `scale()`                |
-| Elección de k             | Controla complejidad: k pequeño sobreajusta, k grande suaviza | Búsqueda por prueba y error |
-| Evaluación del modelo     | Se mide con exactitud y matriz de confusión                   | `table()`, `mean()`      |
+| **Tema**                      | **Idea principal**                                                       | **Herramienta / Concepto**       |
+| ----------------------------- | ------------------------------------------------------------------------ | -------------------------------- |
+| k vecinos más cercanos (k-NN) | Predice usando la información de los vecinos más similares               | `class::knn()`, `FNN::knn.reg()` |
+| Distancia                     | Define la noción de “vecindad” entre observaciones                       | Distancia Euclídea               |
+| Normalización                 | Evita que variables grandes dominen la distancia                         | `scale()`                        |
+| Elección de k                 | Controla el nivel de suavizamiento: k bajo sobreajusta, k alto subajusta | Prueba y error / validación      |
+| Evaluación en clasificación   | Importa cuántos aciertos logra el modelo                                 | Matriz de confusión, exactitud   |
+| Evaluación en regresión       | Interesa el error promedio de la predicción                              | RMSE                             |
+| Interpretación del método     | Una observación se clasifica según la mayoría o promedio de sus vecinos  | Vecindario, similitud            |
+

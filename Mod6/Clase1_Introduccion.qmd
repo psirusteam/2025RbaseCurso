@@ -1,0 +1,36 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 6"
+subtitle: "Clase 1: Introducción (definir que es modelo estadistico)"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En ciencia de datos trabajamos con preguntas que requieren entender patrones, variabilidad y relaciones entre variables. Para responderlas necesitamos una herramienta que traduzca esos fenómenos a una estructura formal que podamos analizar.
+
+**Esa herramienta es el modelo estadístico.**
+

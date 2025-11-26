@@ -30,7 +30,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(printr)
 ```
 
-# **Introducción**
+# Introducción
 
 Los árboles de decisión son modelos predictivos basados en un conjunto de reglas
 de división que separan los datos en grupos cada vez más homogéneos.
@@ -45,7 +45,7 @@ Son ampliamente utilizados porque:
 
 - Funcionan tanto para variables categóricas como numéricas.
 
-# **Árboles de clasificación y regresión**
+# Árboles de clasificación y regresión
 Los árboles pueden ser de dos tipos:
 
 - Árboles de clasificación:
@@ -54,7 +54,7 @@ Cuando la variable objetivo es categórica (por ejemplo, pobreza vs no pobreza).
 - Árboles de regresión:
 Cuando la variable objetivo es numérica (por ejemplo, ingreso del hogar).
 
-# **Cómo funciona un árbol**
+# Cómo funciona un árbol
 
 Un árbol se construye dividiendo los datos paso a paso:
 
@@ -68,10 +68,11 @@ Un árbol se construye dividiendo los datos paso a paso:
 Un árbol divide los datos en grupos cada vez más homogéneos.
 :::
 
-# **Árboles de clasificación**
+# Árboles de clasificación
 
-En clasificación, cada partición se elige para que los grupos queden lo más
-“puros” posible (es decir, que predomine una sola clase).
+En clasificación, el algoritmo evalúa distintas formas de dividir los datos y
+selecciona las que producen nodos lo más “puros” posibles  
+(es decir, donde domina una sola categoría).
 
 Las medidas más usadas son:
 
@@ -86,7 +87,7 @@ Donde $p_k$ es la proporción de casos en la clase $k$ dentro del nodo.
 
 Las divisiones buscan nodos “puros”, es decir, donde una clase domina claramente.
 
-# **Árboles de regresión**
+# Árboles de regresión
 
 En regresión, en lugar de pureza de clases, nos interesa que los valores de la
 variable objetivo sean similares dentro de cada nodo.
@@ -101,136 +102,221 @@ En cada hoja, la predicción es el promedio de la variable objetivo en ese grupo
 
 # Ejemplo práctico: clasificación
 
-Usaremos la base base_personas_gasto.rds para predecir si un hogar tiene ingreso bajo.
+Usaremos la variable dicotómica de pobreza:
+
+- **1 = pobres** (pobreza extrema o moderada)  
+- **0 = no pobres**
+
+Se utilizan todas las observaciones disponibles.
+
+
+
 
 ```{r include=TRUE, echo=TRUE}
 
 library(tidyverse)
 library(rpart)
-datos <- readRDS("../Data/base_personas_gasto.rds")
 
-set.seed(123)
-muestra <- slice_sample(datos, n = 500) %>%
+datos <- readRDS("../Data/base_personas_gasto.rds") %>%
   mutate(
-    ingreso_bajo = if_else(ingreso < median(ingreso, na.rm = TRUE), "Sí", "No"),
-    ingreso_bajo = factor(ingreso_bajo)
-  ) %>%
-  select(ingreso_bajo, edad, sexo, gasto_hh, area, pobreza, ingreso)
+    pobreza3 = if_else(pobreza2 %in% c(1,2), "1", "0"),
+  ) %>% select(id_hogar,area,pobreza3, ingreso, sexo,
+               etnia,edad_hh, anoest_hh)
 
 ```
 # Ejemplo práctico: clasificación
 
 ```{r include=TRUE, echo=TRUE}
 
-head(muestra, 10)
+head(datos, 10)
 ```
 # Ajuste del árbol de clasificación
 
-Ahora construiremos un árbol que predice si **el hogar tiene ingreso bajo (`ingreso_hh`)** usando variables socioeconómicas.
+Ahora construiremos un árbol que predice si **el hogar es pobre** usando variables sociodemográficas.
 
 ```{r include=TRUE, echo=TRUE}
-arbol_clas <- rpart(
-ingreso_bajo ~ sexo + area + pobreza,
-data = muestra,
+
+arbol_pobreza <- rpart(
+pobreza3 ~ area +sexo  + etnia + edad_hh + anoest_hh,
+data = datos,
 method = "class"
 )
 
 ```
 
 
-# Ajuste del árbol de clasificación
-
-```{r include=TRUE, echo=TRUE}
-arbol_clas
-```
 # Visualización del árbol
 
 
-```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
+```{r include=TRUE, echo=TRUE, fig.height=3, out.width='100%'}
 library(rpart.plot)
 
-rpart.plot(arbol_clas, type = 2, extra = 104, under = TRUE,
-main = "Árbol de clasificación: ingreso bajo")
+rpart.plot(arbol_pobreza, type = 2, extra = 104, under = TRUE,
+           main = "Árbol de clasificación: pobreza (1 = pobre)")
 
 ```
-
 
 
 # Interpretación del árbol
 
-:::{.callout-tip title="Interpretación"}
-Cada nodo representa una regla de decisión.
 
-Cada hoja representa una predicción basada en la clase mayoritaria del nodo.
+::: {.callout-tip title="Cómo leer el árbol"}
+
+El árbol realizó una sola división, usando la variable años de educación (anoest_hh), porque:
+
+- Los hogares con educación mostraron una probabilidad muy baja de pobreza (solo 15%).
+
+- Los hogares sin educación presentaron una probabilidad extremadamente alta de pobreza (100%).
+
+Esta diferencia es tan fuerte y tan clara que el modelo no necesitó más preguntas para separar a pobres y no pobres.
 :::
 
-# Árboles y sobreajuste
+# Interpretación del árbol
 
-Los árboles tienden a sobreajustarse (se vuelven muy complejos y se adaptan demasiado
-a la muestra).
+**¿Por qué NO se dividió por área, edad, o sexo?**
 
-Para controlar esto se usa la poda (pruning), basada en el parámetro de complejidad (CP):
+Porque ninguna de esas variables generaba una diferencia tan marcada en la pobreza como la educación.
+Es decir:
 
-# Árboles y sobreajuste
+- Zona urbana vs rural → diferencias pequeñas.
 
-```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
-printcp(arbol_clas)
+- Sexo del jefe → diferencias muy bajas.
+
+- Edad del jefe del hogar → poca separación entre pobres y no pobres.
+
+En cambio, la educación sí generó dos grupos extremadamente distintos, lo que hace que el algoritmo la tome como la mejor primera división.
+
+# Zoom a las predicciones del árbol
+
+Luego de ajustar el modelo, podemos obtener dos tipos de predicciones:
+
+1. La clase predicha (0 = no pobre, 1 = pobre)
+
+2. La probabilidad estimada de ser pobre
+
+Esto permite ver cómo el árbol clasifica a cada hogar según sus características.
+
+# Zoom a las predicciones del árbol
+
+```{r include=TRUE, echo=TRUE}
+
+# Predicción de la clase (0/1)
+pred_clase <- predict(arbol_pobreza, type = "class")
+
+# Probabilidad predicha de ser pobre
+pred_prob <- predict(arbol_pobreza, type = "prob")[, "1"]
+
+# Unir predicciones a la base original
+resultados <- datos %>%
+  mutate(
+    prediccion = pred_clase,
+    prob_pobre = pred_prob
+  )%>%
+  select(
+    anoest_hh,    pobreza3, 
+    prediccion, prob_pobre  
+  )
+
 
 ```
 
+# Zoom a las predicciones del árbol
+
+```{r include=TRUE, echo=TRUE}
+
+head(resultados, 10)
+
+```
 
 # **Ejemplo práctico: árbol de regresión**
 
-Ahora construiremos un árbol que predice el **ingreso del hogar (`ingreso_hh`)** usando
-variables socioeconómicas.
+Ahora construiremos un árbol que predice el **ingreso del hogar (`ingreso`)** usando variables sociodemográficas. 
 
 
-```{r include=TRUE, echo=TRUE}
-arbol_reg <- rpart(
-  ingreso ~ sexo + area + pobreza,
-  data = muestra,
-  method = "anova"    # <-- regresión
+```{r include=TRUE, echo=TRUE} 
+ arbol_reg <- rpart( 
+   ingreso ~ area +sexo  + etnia + edad_hh + anoest_hh, 
+   data = datos, 
+   method = "anova"    # regresión 
 )
 
-```
-
-# **Ejemplo práctico: árbol de regresión**
-
-```{r include=TRUE, echo=TRUE}
-arbol_reg 
-```
+``` 
 
 
-# Visualización del árbol de regresión
 
-```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'}
-library(rpart.plot)
+# Visualización del árbol de regresión 
 
-rpart.plot(arbol_reg,type = 2,under = TRUE,
-           main = "Árbol de regresión: ingreso del hogar",
-cex = 1.1
-)
+```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'} 
+ library(rpart.plot) 
 
-```
+ rpart.plot(arbol_reg,type = 2,under = TRUE, 
+            main = "Árbol de regresión: ingreso del hogar", 
+ cex = 1.1 
+ ) 
 
-# Interpretación del árbol de regresión
+``` 
+
+# Interpretación del árbol de regresión 
 
 ::: {.callout-tip title="Interpretación (regresión)"}
 
-Cada nodo representa una regla usada para dividir los datos según valores numéricos.
+- Cada nodo aplica una regla para dividir a los hogares según sus características.
 
-Cada hoja muestra el promedio del ingreso de los hogares en ese grupo.
+- Cada hoja muestra el ingreso promedio del grupo formado.
 
-El árbol escoge las divisiones que reducen la variabilidad dentro de los nodos.
+- El árbol elige las divisiones que reducen la variabilidad del ingreso, creando grupos más homogéneos.
+
+En este caso, primero divide por educación, porque es la variable que más diferencia los ingresos, y luego por edad, para refinar aún más la predicción.
 :::
 
-# Conclusiones de la Clase
+# Zoom a las predicciones del árbol
 
-| Tema                         | Idea principal                                                 | Herramienta                         |
-|----------------------------- |--------------------------------------------------------------- |-------------------------------------|
-| Árbol de clasificación       | Predice categorías; busca nodos puros (Gini / Entropía)       | `rpart(method = "class")`           |
-| Árbol de regresión           | Predice valores numéricos; minimiza la variabilidad interna   | `rpart(method = "anova")`           |
-| Estructura del árbol         | Nodo raíz → nodos internos → hojas; reglas de decisión        | —                                   |
-| Criterios de división        | Clasificación: pureza; Regresión: menor variabilidad          | Automático en `rpart`               |
-| Sobreajuste                  | Los árboles pueden crecer demasiado                           | —                                   |
-| Poda (pruning)               | Controla el tamaño del árbol mediante el parámetro CP         | `printcp()`              |
+```{r include=TRUE, echo=TRUE}
+# Predicción del ingreso para cada hogar
+ingreso_pred <- predict(arbol_reg)
+
+# Nodo terminal al que pertenece cada hogar
+nodos <- arbol_reg$where
+
+# Tabla limpia de resultados
+resultados_reg <- datos %>%
+  mutate(
+    ingreso_obs  = ingreso,
+    ingreso_pred = ingreso_pred,
+    nodo_terminal = nodos
+  ) %>%
+  select(nodo_terminal, ingreso_obs, ingreso_pred, 
+         anoest_hh, edad_hh, area, sexo)
+
+``` 
+
+# Zoom a las predicciones del árbol
+
+```{r include=TRUE, echo=TRUE}
+head(resultados_reg, 10)
+``` 
+
+# Zoom a las predicciones del árbol
+
+::: {.callout-note title="¿Qué vemos en esta tabla?"}
+
+- ingreso_obs: ingreso observado del hogar en la base original.
+
+- ingreso_pred: ingreso que el árbol de regresión predice para ese hogar.
+
+- nodo_terminal: grupo (hoja) del árbol al que pertenece el hogar, según su perfil sociodemográfico.
+
+Dentro de cada nodo, el modelo asigna un mismo ingreso predicho a todos los hogares, que corresponde al promedio del ingreso en ese grupo.
+
+Esta tabla permite comparar el ingreso real con el ingreso estimado por el modelo y entender cómo el árbol traduce las características del hogar en una predicción numérica.
+:::
+
+# Resumen  de la Clase
+
+| Tema                       | Definición breve                                                                    | Herramienta               |
+| -------------------------- | ----------------------------------------------------------------------------------- | ------------------------- |
+| **Árbol de clasificación** | Predice categorías; divide los datos buscando nodos lo más puros posible.           | `rpart(method = "class")` |
+| **Árbol de regresión**     | Predice valores numéricos; forma grupos con promedios de ingreso homogéneos.        | `rpart(method = "anova")` |
+| **Estructura del árbol**   | Nodo raíz → nodos internos → hojas; cada nodo es una regla de decisión.             | —                         |
+| **Criterios de división**  | Clasificación: pureza (Gini/Entropía). Regresión: menor variabilidad.               | Automático en `rpart`     |
+| **Predicción final**       | Cada hoja asigna una **clase** o un **valor promedio** a todos los casos del grupo. | —                         |
