@@ -140,7 +140,7 @@ $$
 La función de decisión se convierte en:
 
 $$
-f(x) = \sum_{i=1}^n \alpha_i y_i \, K(x_i, x) + b.
+f(x) = \sum_{i=1}^n \alpha_i y_i \, K(x_i, x) + b
 $$
 
 # SVM con kernels
@@ -173,136 +173,136 @@ Permite fronteras curvas controladas por \(\gamma\).
 :::
 
 
-# Ejemplo práctico en R: clasificación binaria con SVM
+# Historia: El equipo que quería distinguir minas de rocas
 
-Vamos a predecir si un hogar tiene **ingreso bajo** usando: sexo, área ,gasto  
+Un equipo de investigación marina trabajaba con dispositivos de sonar para detectar minas submarinas en zonas de navegación.
+El sonar emitía pulsos de sonido y registraba el eco devuelto por objetos en el fondo marino.
+
+Cada eco podía ser:
+
+- Una roca inofensiva (R), o
+
+- Una mina (M) que representaba un riesgo real.
+
+# Historia: El equipo que quería distinguir minas de rocas
+
+Los ingenieros habían logrado registrar, para cada eco de sonar:
+
+- La energía reflejada en distintas bandas de frecuencia.
+
+- Un rótulo final asignado por expertos: M (mina) o R (roca).
+
+Sin embargo, al graficar algunos pares de variables, notaban que:
+
+- En algunos casos, las minas y rocas se mezclaban.
+
+- No era posible separarlas con una simple línea recta.
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos construir un modelo que distinga minas de rocas, incluso cuando la frontera de separación es compleja?”
+:::
+
+Los ingenieron decidieron entonces aplicar **Máquinas de Soporte Vectorial**.
+
+# Datos: Sonar (mlbench)
 
 ```{r include=TRUE, echo=TRUE}
-library(tidyverse)
+library(mlbench)
+data(Sonar)
+head(Sonar[1:8],5)
+
+```
+# Preparación de los datos
+
+Al contrastar la metodología para Máquinas de Soporte Vectorial, los ingenieros concluyeron que **el primer paso imprescindible era estandarizar las covariables**. 
+
+```{r include=TRUE, echo=TRUE}
+X <- as.data.frame(scale(Sonar[, 1:60]))  # predictores estandarizados
+y <- Sonar$Class                          # clase: M / R
+
+datos <- cbind(X, Class = y)
+head(datos[, 1:8])
+
+
+```
+
+# Visualización preliminar (PCA)
+
+El equipo decidió empezar con una SVM lineal, para observar qué tan separables eran las clases en el espacio original.
+
+```{r include=TRUE, echo=FALSE,  fig.height=5, out.width='80%'}
+library(ggplot2)
+pca <- prcomp(X, scale. = FALSE)
+df_pca <- data.frame(PC1 = pca$x[,1],
+PC2 = pca$x[,2],
+Class = y)
+
+ggplot(df_pca, aes(PC1, PC2, color = Class)) +
+geom_point(alpha = 0.7) +
+theme_minimal() +
+ggtitle("Sonar: proyección PCA (2 componentes)")
+
+
+```
+
+# Visualización preliminar (PCA)
+
+::: {.callout-note title="¿Qué observaron los analistas en la PCA?"}
+Las observaciones correspondientes a minas y rocas no se separan de forma perfectamente lineal en el plano PCA. Hay zonas de mezcla entre clases, lo que sugiere la necesidad de un clasificador con fronteras no lineales, como una SVM con kernel radial.
+:::
+
+# SVM con kernel radial (RBF)
+
+```{r include=TRUE, echo=TRUE}
 library(e1071)
-
-datos <- readRDS("../Data/base_personas_gasto.rds")
-set.seed(123)
-muestra <- datos %>%
-  slice_sample(n = 600) %>%
-  mutate(
-    ingreso_bajo = if_else(
-      ingreso < median(ingreso, na.rm = TRUE),
-      "Sí", "No"
-    ),
-    ingreso_bajo = factor(ingreso_bajo),
-    sexo = factor(sexo),
-    area = factor(area)
-  ) %>%
-  select(ingreso_bajo, sexo, area, gasto, edad)
-```
-
-# Ejemplo práctico en R: clasificación binaria con SVM
-
-```{r include=TRUE, echo=TRUE}
-
-head(muestra, 10) 
-```
-
-# Separación en entrenamiento y prueba
-
-```{r include=TRUE, echo=TRUE}
-set.seed(123)
-n <- nrow(muestra)
-id_train <- sample(seq_len(n), 0.7*n)
-
-train <- muestra[id_train, ]
-test  <- muestra[-id_train, ]
-
-table(train$ingreso_bajo)
-table(test$ingreso_bajo)
-
-```
-
-# Ajuste del modelo SVM (kernel radial)
-
-
-```{r include=TRUE, echo=TRUE}
-svm_model <- svm(
-ingreso_bajo ~ sexo + area + gasto,
-data   = train,
+svm_rbf <- svm(Class ~ ., data = datos,
 kernel = "radial",
-cost   = 1,
-gamma  = 0.1,
-scale  = TRUE
-)
+cost   = 10,
+gamma  = 0.05)
 
+svm_rbf
 
 
 ```
-
-# Predicciones y evaluación
+# SVM con kernel radial (RBF)
 
 ```{r include=TRUE, echo=TRUE}
-pred_svm <- predict(svm_model, newdata = test)
+pred_rbf <- predict(svm_rbf, datos)
+tab_rbf  <- table(Predicho = pred_rbf, Real = datos$Class)
+tab_rbf
 
-conf_matrix <- table(Observado = test$ingreso_bajo,
-Predicho = pred_svm)
-conf_matrix
+acc_rbf <- sum(diag(tab_rbf)) / sum(tab_rbf)
+acc_rbf
 
-exactitud <- mean(pred_svm == test$ingreso_bajo)
-exactitud
 ```
+# SVM con kernel radial (RBF)
+::: {.callout-note title="¿Qué observaron los analistas al evaluar el modelo RBF?"}
 
-# Interpretación
-
-::: {.callout-tip title="Interpretación del resultado SVM"}
-**Matriz de confusión**  
-Muestra cuántos hogares fueron clasificados correctamente o incorrectamente.
-
-**Exactitud**  
-Proporción total de aciertos del modelo en el conjunto de prueba.  
-Por ejemplo, una exactitud de 0.76 indica que el modelo acierta el **76%** de las predicciones.
+Al revisar los resultados del modelo SVM con kernel radial, los analistas notaron un desempeño excepcional: la matriz de confusión mostró que todas las minas fueron correctamente clasificadas como minas y todas las rocas como rocas, sin errores de predicción. Esto se reflejó en una precisión igual a 1, es decir, una clasificación perfecta en el conjunto de entrenamiento.
 :::
 
-# Comparación rápida: SVM lineal vs SVM radial
+# Vectores de soporte
 
 ```{r include=TRUE, echo=TRUE}
-svm_linear <- svm(
-ingreso_bajo ~ sexo + area + gasto,
-data   = train,
-kernel = "linear",
-cost   = 1,
-scale  = TRUE
-)
-
-pred_lin <- predict(svm_linear, newdata = test)
+svm_rbf$nSV
 
 ```
+::: {.callout-note title="¿Qué observaron los analistas sobre los vectores de soporte?"}
 
-# Comparación rápida: SVM lineal vs SVM radial
-
-
-```{r include=TRUE, echo=TRUE}
-
-
-tibble(
-modelo    = c("SVM radial", "SVM lineal"),
-exactitud = c(mean(pred_svm == test$ingreso_bajo),
-mean(pred_lin == test$ingreso_bajo))
-)
-
-```
-
-::: {.callout-tip title="Interpretación"}
-
-SVM lineal funciona si la frontera es casi recta.
-
-SVM radial funciona mejor cuando la frontera es curva.
+Al revisar el objeto del modelo, los analistas notaron que la SVM con kernel radial utilizaba **89 vectores de soporte de una clase y 100 de la otra**, es decir, casi todas las observaciones del conjunto de datos participaban en la definición de la frontera de decisión. 
 :::
+
+
 
 # Resumen de la clase
 
-| Tema                         | Idea principal                                        | Herramienta      |
-|----------------------------- |------------------------------------------------------ |------------------|
-| SVM binaria                  | Separa dos clases con un hiperplano                  | —                |
-| Margen                       | Distancia entre frontera y puntos más cercanos        | —                |
-| Vectores de soporte          | Observaciones que definen la frontera                | —                |
-| Kernel radial                | Permite fronteras no lineales                        | `kernel="radial"`|
-| Evaluación del modelo        | Matriz de confusión y exactitud                      | `table()`, `mean()` |
-
+| Tema                  | Idea principal                                | Herramienta |
+|---------------------- |-----------------------------------------------|-------------|
+| SVM                  | Modelo para clasificar o predecir valores      | `svm()`     |
+| Margen               | SVM busca la separación más amplia entre clases| —           |
+| Vectores de soporte  | Puntos que definen la frontera                 | —           |
+| Kernel radial (RBF)  | Permite fronteras curvas                       | `kernel="radial"` |
+| Regresión SVM        | Predice ingreso y se evalúa con RMSE           | RMSE        |
+| Clasificación SVM    | Predice pobreza (0/1) con umbral 0.5           | `if_else()` |
+| Evaluación           | Calidad del modelo via matriz de confusión     | `table()`, `mean()` |
+  |

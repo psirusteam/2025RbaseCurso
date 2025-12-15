@@ -1,0 +1,208 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 6"
+subtitle: "Clase 4: Regresión lineal multiple"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En la clase anterior aprendimos regresión lineal simple, donde analizamos la relación
+entre el ingreso y una sola variable explicativa (gasto o pobreza).
+
+Hoy avanzamos hacia la regresión lineal múltiple, donde incorporamos más de una covariable
+para explicar el ingreso.
+
+::: {.callout-tip title="Idea principal"}
+La regresión múltiple permite estimar el efecto de cada variable ajustando por las demás,
+es decir, calculando efectos parciales.
+:::
+
+# ¿Qué es regresión lineal múltiple?
+
+La forma general del modelo es:
+
+$$
+Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \ldots + \beta_k X_k + \varepsilon
+$$
+
+Donde:
+
+-   $Y$: variable respuesta (continua)
+-   $X_1,...,X_k$: covariables (categóricas o continuas)\
+-   $\beta_1$: efecto parcial de la covariable (X_i) sobre (Y)\
+-   $\varepsilon$: error aleatorio
+
+::: {.callout-note title="Diferencia con regresión simple"}
+En regresión múltiple, los coefficients se interpretan manteniendo constantes todas las
+demás variables.
+:::
+
+# Supuestos del modelo múltiple
+
+| Supuesto             | Explicación breve                                                    |
+|----------------------|--------------------------------------------------------------------|
+| Linealidad           | Cada relación (X_i \to Y) es lineal en promedio.                     |
+| Independencia        | Las observaciones no están correlacionadas.                          |
+| Homoscedasticidad    | Varianza constante del error.                                        |
+| Normalidad           | Los residuos deben ser aproximadamente normales.                     |
+| No multicolinealidad | Las covariables no deben estar fuertemente correlacionadas entre sí. |
+
+::: {.callout-tip title="Importante"}
+Si dos variables explicativas están muy correlacionadas entre sí, los coeficientes pueden
+volverse inestables.
+:::
+
+# Historia: El misterio del precio de las casas en Boston
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Qué hace que un vecindario sea más costoso que otro?”
+:::
+
+Un equipo de planificadores urbanos de Boston estaba intrigado:
+algunos vecindarios del área metropolitana tenían precios promedio de vivienda dos o tres veces más altos que otros, aun estando relativamente cerca.
+
+- Tenían una hipótesis inicial: “Los vecindarios más cercanos al centro deben ser más caros.”
+
+- Pero otra analista intervino: “No solo eso. También influyen la criminalidad, el tamaño promedio de las viviendas, el nivel socioeconómico del barrio…”
+
+En ese momento todos entendieron que:
+
+**Para comprender el valor promedio de un vecindario no basta una sola variable. Necesitamos analizar varias a la vez. Por eso aplicaron regresión lineal múltiple.**
+
+# Datos: el clásico dataset Boston
+
+```{r include=TRUE, echo=TRUE}
+
+library(MASS)
+library(tidyverse)
+
+datos <- Boston %>% as_data_frame() %>% dplyr::select(medv,rm,lstat, crim,dis)
+
+head(datos, 5)
+
+```
+
+# Covariables del modelo (Boston Housing)
+
+| Variable  | Tipo                 | Qué representa                               | Por qué es útil en el modelo                                                |
+| --------- | -------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
+| **medv**  | Continua (respuesta) | Valor mediano de las viviendas ($1000 USD)   | Es la variable que queremos explicar.                                       |
+| **rm**    | Continua             | Número promedio de habitaciones por vivienda | Las casas más grandes suelen valer más.                                     |
+| **lstat** | Continua             | % de población con bajo nivel socioeconómico | Zonas más vulnerables suelen tener menor valor de vivienda.                 |
+| **crim**  | Continua             | Tasa de criminalidad por sector              | La seguridad influye en el precio.                                          |
+| **dis**   | Continua             | Distancia a centros laborales importantes    | Captura accesibilidad: viviendas más cercanas a la ciudad suelen valer más. |
+
+
+# El modelo de regresión múltiple
+
+Los analistas plantean:
+
+
+$$medv = \beta_0 + \beta_1 rm + \beta_2 lstat + \beta_3 crim  +\beta_4 dis +  \epsilon$$
+
+
+```{r include=TRUE, echo=TRUE}
+
+mod_boston <- lm(medv ~ rm + lstat +crim + dis, data = datos)
+```
+
+# Ajuste del modelo
+
+\footnotesize
+```{r include=TRUE, echo=TRUE}
+summary(mod_boston)
+```
+
+# Interpretación del modelo
+
+Después de ajustar el modelo con información de los vecindarios de Boston, los analistas por fin pudieron entender qué factores explican el precio de las viviendas.
+
+El modelo reveló:
+
+- Más habitaciones (rm) → viviendas claramente más caras.
+Cada habitación adicional se asocia con un fuerte aumento en el valor.
+
+- Mayor vulnerabilidad social (lstat) → viviendas más baratas.
+A mayor porcentaje de hogares de bajo estatus, menor precio promedio.
+
+- Más criminalidad (crim) → precios más bajos.
+La inseguridad reduce el atractivo del barrio.
+
+- Estar lejos del centro (dis) → viviendas menos valiosas.
+La distancia a las oportunidades económicas importa.
+
+# Predicciones con el modelo — “¿Cuánto valdrá en promedio una vivienda en un nuevo vecindario?”
+
+Los urbanistas, emocionados con su modelo, decidieron usarlo como una herramienta predictiva.
+
+Querían estimar el **valor mediano de las viviendas** en un **vecindario hipotético** con estas características promedio:
+
+- `rm = 6` → las viviendas del vecindario tienen, en promedio, **6 habitaciones**  
+- `lstat = 10` → alrededor de **10% de los hogares** son de bajo estatus socioeconómico  
+- `crim = 0.05` → **baja criminalidad** en la zona  
+- `dis = 4` → el vecindario está a una **distancia moderada** de los centros de empleo
+
+
+# Predicciones con el modelo — “¿Cuánto valdrá en promedio una vivienda en un nuevo vecindario?”
+
+```{r include=TRUE, echo=TRUE}
+nuevo_vecindario <- data.frame(
+  rm   = 6,     # promedio de habitaciones
+  lstat = 10,   # % de hogares de bajo estatus
+  crim = 0.05,  # baja criminalidad
+  dis  = 4      # distancia a centros de empleo
+)
+predict(mod_boston, newdata = nuevo_vecindario)
+
+```
+
+::: {.callout-tip title="¿Cómo interpretar esta predicción?"}
+El modelo devuelve el valor mediano esperado de las viviendas (en miles de dólares)
+en un vecindario con estas características promedio.
+:::
+
+# Moraleja de la historia
+
+::: {.callout-note title="Moraleja"}
+El valor de una vivienda no depende de una sola característica,
+sino de una combinación de factores físicos, sociales y espaciales.
+
+La regresión múltiple les permitió ver algo que antes no era evidente:
+un barrio es más que sus casas; es un sistema.
+:::
+
+
+# Resumen de la clase
+| Tema                        | Definición breve |
+|----------------------------|------------------|
+| Regresión múltiple         | Relaciona ingreso con varias covariables simultáneamente. |
+| Efecto parcial             | Cada coeficiente mide el efecto ajustado por las demás variables. |
+| Variables categóricas      | Se convierten en dummies; se compara con una categoría base. |
+| Variables continuas        | Interpretación marginal: cambio en ingreso por unidad adicional. |
+
+
+

@@ -1,0 +1,309 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 6"
+subtitle: "Clase 3: Regresión lineal simple"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En la clase anterior exploramos los datos (EDA), en particular la distribución del
+ingreso y su relación con la pobreza.
+Hoy daremos el siguiente paso: construir modelos de regresión lineal simple para
+relacionar el ingreso con una sola variable explicativa a la vez.
+
+::: {.callout-tip title="Idea principal"}
+La regresión lineal simple permite cuantificar la relación entre una variable respuesta
+numérica (por ejemplo, ingreso) y una variable explicativa, que puede ser continua o
+categórica.
+:::
+
+# ¿Qué es regresión lineal simple?
+
+La regresión es una técnica estadística que permite **describir**, **explicar** y **predecir**
+una variable de interés \(Y\) usando una o varias variables explicativas \(X\).
+
+En regresión **lineal simple**, utilizamos **solo una** variable explicativa.
+
+La meta del modelo es aproximar la relación entre \(X\) e \(Y\) mediante una **recta**.
+
+::: {.callout-tip title="¿Por qué 'lineal'?"}
+Porque la relación entre la variable explicativa y la respuesta se representa como una **línea recta** en promedio.
+:::
+
+# ¿Cuándo puedo usar regresión lineal simple?
+
+Se usa cuando:
+
+- La variable **Y es numérica continua** (ej. ingreso).
+- Hay **solo una** variable explicativa \(X\).
+- La relación entre \(X\) e \(Y\) es *aproximadamente* lineal (o linealizable).
+- Los valores de \(X\) pueden ser:
+  - **continuos** (años de estudio, edad)  
+  - **categóricos** (pobre/no pobre, sexo, área)
+
+::: {.callout-warning title="Importante"}
+La variable respuesta **no puede ser categórica**.  
+Si Y es binaria (ej. pobreza), se utiliza **regresión logística**, no lineal.
+:::
+
+# Ecuación del modelo
+
+La forma general es:
+
+
+$$Y = \beta_0 + \beta_1 X + \varepsilon$$
+
+
+Donde:
+
+- $(Y)$: variable respuesta (continua)
+- $(X)$: covariable (continua o categórica)
+- $(\beta_0)$: intercepto (valor medio de Y cuando X = 0)
+- $(\beta_1)$: pendiente (cambio promedio en Y por unidad de X)
+- $(\varepsilon)$: error aleatorio
+
+# ¿Cómo estima R los coeficientes?
+La función elige los valores de $(\beta_0)$ y $(\beta_1)$ que **minimizan la suma de cuadrados de los errores** (Mínimos Cuadrados Ordinarios — *OLS*):
+
+$$
+\text{Minimizar } \sum (Y_i - \hat{Y}_i)^2
+$$
+
+Esto garantiza:
+
+- La recta está "lo más cerca posible" de los datos.
+- Los residuos promedio sean cero.
+- El modelo tenga la máxima eficiencia bajo los supuestos del OLS.
+
+# Supuestos principales del modelo lineal
+
+Aunque no profundizamos aún en inferencia, es útil introducir los supuestos:
+
+| Supuesto | Explicación breve |
+|---------|--------------------|
+| **Linealidad** | La relación entre X e Y es lineal "en promedio". |
+| **Independencia** | Las observaciones no están correlacionadas entre sí. |
+| **Homoscedasticidad** | La variabilidad de los errores es constante. |
+| **Normalidad del error** | Los residuos siguen distribución normal (para inferencia). |
+
+
+# Historia: Los científicos que querían predecir el peso de los pingüinos
+
+
+Un grupo de biólogos de la Antártida estaba estudiando pingüinos.
+Querían saber si podían predecir el peso de un pingüino usando solo el largo de su aleta.
+
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Los pingüinos con aletas más largas tienden a pesar más?”
+:::
+Usaremos la base `palmerpenguins`, que contiene mediciones reales de pingüinos.
+
+# Datos: penguins
+
+
+```{r include=TRUE, echo=TRUE}
+
+library(palmerpenguins)
+library(tidyverse)
+
+datos <- penguins %>% 
+  select(flipper_length_mm, body_mass_g, species) %>% 
+  drop_na()
+
+head(datos, 5)
+
+```
+
+# Modelo lineal simple
+
+::: {.callout-note title="Variables del modelo"}
+- **Y (respuesta)**: `body_mass_g` → peso del pingüino en gramos.  
+- **X (explicativa)**: `flipper_length_mm` → largo de la aleta en milímetros.
+
+La regresión lineal simple modela:
+
+
+$$
+peso = \beta_0 + \beta_1 ⋅largo  aleta + \varepsilon
+$$
+:::
+
+# Modelo lineal simple
+
+\footnotesize
+```{r include=TRUE, echo=TRUE}
+
+mod_ping <- lm(body_mass_g ~ flipper_length_mm, data = datos)
+summary(mod_ping)
+
+```
+# Modelo lineal simple
+
+::: {.callout-tip title="¿Qué nos dicen los coeficientes?"}
+- La **pendiente** $\beta_1 = 49.686$ es positiva y significativa.  
+  → A mayor largo de aleta, **mayor peso** en promedio.  
+
+- Interpretación aproximada:  
+  cada **1 mm** adicional de largo de aleta se asocia con unos **49.7 gramos más de peso** en promedio.
+
+- El modelo no dice que la aleta “cause” el peso,  
+  pero sí que existe una **relación lineal útil para describir y predecir**.
+:::
+
+# Modelo lineal simple
+
+```{r include=TRUE, echo=TRUE}
+
+graf1 <- ggplot(datos, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(alpha = 0.4, color = "steelblue") +
+  geom_smooth(method = "lm", se = FALSE, color = "red", size = 1) +
+  labs(
+    title = "¿Los pingüinos con aletas más largas pesan más?",
+    x = "Largo de la aleta (mm)",
+    y = "Peso (g)"
+  )
+
+```
+
+
+# Modelo lineal simple
+
+```{r include=TRUE, echo=FALSE, fig.height=5, out.width='100%'}
+
+graf1 
+
+```
+Existe una relación lineal fuerte y positiva entre el tamaño de la aleta y el peso del pingüino. Es decir, pingüinos más “robustos” tienden a tener aletas más grandes.
+
+# Predicción con el modelo — La historia continúa…
+
+Después de ajustar el modelo, los biólogos quedaron fascinados.
+Ya habían comprobado que los pingüinos con aletas más largas tienden a pesar más.
+
+Pero ahora querían ir más allá:
+
+- “¿Podemos predecir cuánto pesará un pingüino solo midiendo su aleta?”
+
+La idea era muy útil: pesar a los pingüinos era difícil, lento y estresante para los animales;
+pero medir la aleta era rápido y no invasivo.
+
+# El modelo como bola de cristal
+
+::: {.callout-tip title="Predicción con regresión lineal"}
+Una vez aprendida la relación lineal, el modelo funciona como una bola de cristal estadística:
+dado un valor de X (largo de la aleta), devuelve un valor esperado de Y (peso).
+:::
+
+Los científicos escribieron en su cuaderno la fórmula que aprendió el modelo:
+
+$$
+\hat{peso} = -5780.831 + 49.686 ⋅largo  aleta
+$$
+
+# Prediciendo el peso de un nuevo pingüino
+
+Un día, encontraron un pingüino juvenil con una aleta de 200 mm.
+
+Le tomaron la medida…
+y con emoción hicieron su primera predicción:
+
+```{r include=TRUE, echo=TRUE}
+
+nuevo_ping <- data.frame(flipper_length_mm = 200)
+predict(mod_ping, newdata = nuevo_ping)
+```
+::: {.callout-note title="¿Qué significa este número?"}
+El valor no es el peso exacto del pingüino,
+sino el peso promedio esperado de un pingüino con una aleta de 200 mm.
+:::
+
+# Moraleja de la historia
+
+Los científicos terminaron con:
+
+- Un modelo simple pero poderoso
+
+- Capaz de describir la relación entre tamaño y peso
+
+- Y también de predecir el peso de nuevos pingüinos
+
+- Con una estimación razonable de la incertidumbre
+
+# ¿Qué cambia cuando X es categórica?
+
+Caso: X categórica (ejemplo: especie del pingüino)
+
+Supongamos que los científicos ahora se preguntan:
+
+::: {.callout-warning title="Nueva pregunta problema"}
+“¿Los pingüinos de distintas especies pesan distinto en promedio?”
+:::
+
+Entonces $X$ ya no es numérica, sino categórica con 3 niveles:
+
+- Adelie
+
+- Chinstrap
+
+- Gentoo
+
+Esto cambia completamente la interpretación.
+
+# Modelo lineal simple con X categórica
+
+\footnotesize
+```{r include=TRUE, echo=TRUE}
+
+mod_cat  <- lm(body_mass_g ~ species, data = datos)
+summary(mod_cat )
+
+```
+
+# Modelo lineal simple con X categórica
+
+::: {.callout-tip title="Interpretación"}
+Los científicos comparan especies.
+
+- Si $\beta_1 > 0$ los Chinstrap pesan más que los Adelie.
+- Si $\beta_1 < 0$ los Chinstrap pesan menos que los Adelie.
+- Igual para $\beta_2$ con Gentoo.
+
+El modelo ya no tiene pendiente, sino diferencias de medias entre grupos.
+:::
+
+# Resumen de la clase
+
+| Tema                 | Idea esencial                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| Modelo lineal simple | Relación lineal entre una variable respuesta (Y) continua y una sola variable explicativa (X).          |
+| Ecuación             | $Y = \beta_0 + \beta_1 X + \varepsilon$, recta que resume la tendencia promedio.                        |
+| (X) continua         | $\beta_1$ es la **pendiente**: cambio promedio en (Y) por unidad de (X).                                |
+| (X) categórica       | El modelo compara **medias** entre grupos; los coeficientes son **diferencias respecto al grupo base**. |
+| Intercepto           | Valor promedio de (Y) cuando (X=0) o para la categoría de referencia.                                   |
+| Interpretación       | Describe asociaciones, no causalidad.                                                                   |
+| Predicción           | El modelo entrega valores esperados de (Y) para nuevos valores de (X).                                  |

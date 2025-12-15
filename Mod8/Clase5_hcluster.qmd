@@ -1,0 +1,236 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 8"
+subtitle: "Clase 5: Hierarchical Cluster"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En el módulo anterior exploramos el clustering no jerárquico (como $k$-medoids), donde el número de grupos ($k$) se especifica de antemano. Ahora, nos enfocaremos en el **Clustering Jerárquico** (Hierarchical Cluster), una familia de métodos de aprendizaje no supervisado que construye una estructura de clusters anidada, permitiendo visualizar las relaciones entre las observaciones a diferentes niveles de similitud.
+
+# ¿Por qué usar Clustering Jerárquico?
+
+El clustering jerárquico es útil cuando:
+- Se desea entender la estructura inherente de los datos sin pre-especificar $k$.
+- El número óptimo de clusters es desconocido o ambiguo.
+- Se necesita una representación visual clara de cómo se agrupan las observaciones (el dendrograma).
+- Se trabaja con bases de datos pequeñas a medianas (debido a su mayor costo computacional en comparación con métodos no jerárquicos).
+
+# ¿Qué es el Hierarchical Cluster?
+
+El clustering jerárquico es un método que organiza los datos en una secuencia de particiones anidadas, representada gráficamente por un dendrograma.
+
+Existen dos enfoques principales para construir esta jerarquía:
+
+1. Enfoque Aglomerativo (Bottom-Up)
+
+2. Enfoque Divisivo (Top-Down)
+
+::: {.callout-tip title="Idea general"}
+El clustering jerárquico no produce una sola partición, sino **todas las posibles**, desde 1 cluster hasta n clusters, en una estructura anidada.
+:::
+
+# Comparación: Jerárquico vs. No Jerárquico
+
+| Característica | Jerárquico (HAC) | No Jerárquico ($k$-medoids) |
+| :--- | :--- | :--- |
+| **Necesidad de $k$** | **No** (se decide *a posteriori* con el dendrograma) | **Sí** (se debe especificar antes del proceso) |
+| **Estructura** | Jerárquica (Anidada) | Particional (Plana) |
+| **Visualización** | Dendrograma (Excelente) | Dispersión (Buena, pero no muestra la relación de fusión) |
+| **Costo Computacional** | Alto ($O(n^3)$ o $O(n^2)$) | Bajo ($O(k \cdot n \cdot i)$) |
+| **Tamaño de Datos** | Pequeño a Mediano | Mediano a Grande |
+
+
+# Enfoque aglomerativo (Bottom-Up)
+
+El enfoque aglomerativo comienza con cada observación en su propio cluster y, en cada paso, fusiona los dos clusters más similares hasta obtener un solo grupo.
+
+Pasos generales:
+
+1. Iniciar con $n$ clusters (cada observación es un cluster).  
+2. Calcular la matriz de distancias entre todos los clusters.  
+3. Fusionar los dos clusters más cercanos.  
+4. Recalcular distancias entre el nuevo cluster y los restantes.  
+5. Repetir hasta que todas las observaciones queden en un único cluster.
+
+::: {.callout-note title="Resultado"}
+El proceso produce una **historia de fusiones**, que se representa en el dendrograma.
+:::
+
+# Enfoque divisivo (Top-Down)
+
+El enfoque divisivo comienza con un solo cluster que contiene todas las observaciones y, en cada paso, divide uno de los clusters en dos.
+
+Pasos generales:
+
+1. Iniciar con un único cluster que contiene todas las observaciones.  
+2. Elegir el cluster a dividir (por ejemplo, el más heterogéneo).  
+3. Dividirlo en dos subclusters usando algún criterio de partición.  
+4. Repetir hasta alcanzar el número deseado de clusters o un criterio de parada.
+
+En la práctica, el enfoque aglomerativo es el más utilizado y el que implementa la función `hclust()` en R.
+
+# Medidas de distancia
+
+El clustering jerárquico se basa en una **matriz de distancias** entre observaciones. Las más utilizadas son:
+
+- **Distancia euclidiana**  
+- **Distancia Manhattan**  
+- **Distancia de Minkowski**
+
+::: {.callout-tip title="Escala de las variables"}
+Antes de calcular distancias, suele ser necesario **estandarizar** las variables, para que ninguna domine por su escala.
+:::
+
+# Métodos de enlace (linkage)
+
+La distancia entre clusters se define a través del **método de enlace**:
+
+- **Single linkage**: distancia mínima entre elementos de dos clusters.  
+- **Complete linkage**: distancia máxima entre elementos de dos clusters.  
+- **Average linkage**: promedio de todas las distancias entre elementos de los dos clusters.  
+- **Ward**: minimiza el incremento en la suma de cuadrados dentro de los clusters.
+
+::: {.callout-note title="Elección del método"}
+El método de enlace afecta la forma del dendrograma y la estructura de los clusters; es recomendable comparar varias opciones.
+:::
+
+# Historia: el análisis de estados
+
+Un equipo de estadística territorial trabajaba con información socioeconómica de los estados:  
+ingresos, educación, crimen, pobreza, esperanza de vida y otros indicadores.  
+
+El objetivo institucional era **construir una tipología oficial de regiones** para apoyar la planificación, pero el equipo enfrentaba un problema:
+
+- algunos estados eran muy similares entre sí,  
+- otros tenían perfiles mixtos,  
+- y no estaba claro cuántos grupos debían existir.
+
+# Historia: el análisis de estados
+
+Durante una reunión, la directora del área planteó:
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Existe una forma de entender cómo se agrupan naturalmente los estados sin decidir antes cuántos grupos deben existir?”
+:::
+
+El equipo necesitaba una herramienta que no exigiera fijar $k$ desde el inicio y que, además, ofreciera una representación visual clara.  
+La respuesta fue el **clustering jerárquico**.
+
+
+# Datos: `state.x77`
+
+Para organizar el análisis, construyeron una base de datos multivariada con varios indicadores.
+
+```{r include=TRUE, echo=TRUE}
+datos_states <- as.data.frame(state.x77)
+head(datos_states, 5)
+```
+# Estandarización de la base
+
+Primero, estandarizaron todas las variables para evitar que la escala dominara las distancias.
+
+
+```{r include=TRUE, echo=TRUE}
+datos_scaled <- scale(datos_states)
+round(head(datos_scaled, 5),2)
+```
+
+# Cálculo de distancias y ajuste del clustering
+
+Luego aplicaron **clustering jerárquico aglomerativo** con distancia euclidiana y método de enlace *complete*, porque buscaban grupos relativamente compactos.
+
+```{r include=TRUE, echo=TRUE}
+dist_states <- dist(datos_scaled, method = "euclidean")
+
+modelo_hclust <- hclust(dist_states, method = "complete")
+modelo_hclust
+
+```
+# Dendrograma
+
+```{r include=TRUE, echo=TRUE, fig.height=5, out.width='100%'}
+plot(modelo_hclust,
+main = "Dendrograma - Clustering jerárquico",
+xlab = "Estados",
+sub  = "")
+abline(h = 5, col = "red", lty = 2)  # línea de corte ilustrativa
+
+```
+
+# Dendrograma
+
+::: {.callout-note title="¿Qué observó el equipo?"}
+
+- **Alaska aparece como un caso atípico**, separándose a una altura muy alta del dendrograma.  
+- Un corte alrededor de **h ≈ 5** sugiere **tres grupos principales** de estados.  
+- Algunas regiones se unen a alturas bajas → **perfiles muy similares**.  
+- Otras fusiones ocurren mucho más arriba → **mayores diferencias internas**.  
+
+En conjunto, el dendrograma reveló una estructura clara de agrupamiento entre los estados.
+:::
+
+# Elección del número de clusters
+
+Después de revisar el dendrograma, el equipo decidió cortar en $k = 3$
+
+```{r include=TRUE, echo=TRUE}
+clusters_3 <- cutree(modelo_hclust, k = 3)
+table(clusters_3)
+```
+
+Luego construyeron perfiles promedio:
+
+```{r include=TRUE, echo=TRUE}
+round(aggregate(datos_states, by = list(Cluster = clusters_3), FUN = mean),2)
+
+```
+
+# Elección del número de clusters
+
+::: {.callout-tip title="Conclusión operativa del equipo"}
+Los clusters representaban:
+
+1. Estados con altos ingresos y alta educación
+
+2. 3. Estados con mayor criminalidad y menor esperanza de vida
+
+Estados intermedios, con niveles medios en la mayoría de las variables
+
+Por primera vez, el equipo disponía de una tipología clara, reproducible y estadísticamente sustentada, sin subjetividades.
+:::
+
+# Resumen de la clase
+
+| Concepto                  | Idea clave                                                                 |
+|---------------------------|---------------------------------------------------------------------------|
+| **Clustering jerárquico** | Construye una estructura anidada de clusters representada por un dendrograma. |
+| **Enfoque aglomerativo**  | Parte de n clusters individuales y va fusionando hasta llegar a 1 solo.   |
+| **Enfoque divisivo**      | Parte de 1 cluster y lo va dividiendo en subgrupos.                       |
+| **Dendrograma**           | Muestra visualmente cuándo y cómo se fusionan los clusters.               |
+| **Métodos de enlace**     | Reglas para medir distancia entre clusters (single, complete, average, Ward). |
+| **Elección de k**         | Se realiza “cortando” el dendrograma a cierta altura según criterios analíticos y sustantivos. |

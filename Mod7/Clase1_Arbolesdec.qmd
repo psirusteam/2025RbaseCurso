@@ -100,215 +100,213 @@ Buscar particiones que minimicen el error cuadrático medio dentro de cada nodo.
 En cada hoja, la predicción es el promedio de la variable objetivo en ese grupo.
 
 
-# Ejemplo práctico: clasificación
+# Historia: El botánico que quería identificar especies
 
-Usaremos la variable dicotómica de pobreza:
+Un instituto de botánica recibía cada semana flores enviadas desde distintas regiones del país.
+Muchas veces llegaban sin etiqueta, y los investigadores perdían horas tratando de clasificar manualmente la especie.
 
-- **1 = pobres** (pobreza extrema o moderada)  
-- **0 = no pobres**
+El jefe del laboratorio planteó una pregunta:
 
-Se utilizan todas las observaciones disponibles.
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos construir un modelo que identifique automáticamente la especie de una flor?”
+:::
 
+La variable de interés especie (setosa, versicolor, virginica) es categórica  → caso ideal para un **árbol de clasificación.**
 
+# Datos: flores del conjunto Iris
 
+Para responder la pregunta, el jefe del laboratorio decidió **sistematizar** toda la información que venían recogiendo desde hace años.  
+Cada vez que llegaba una flor al instituto, los asistentes medían cuidadosamente:
+
+- el largo y ancho del **sépalo**,  
+- el largo y ancho del **pétalo**,  
+- y registraban la **especie** confirmada por un experto.
+
+Con el tiempo, fueron construyendo una tabla donde **cada fila es una flor** y **cada columna es una de estas mediciones**.
+
+# Datos: flores del conjunto Iris
 
 ```{r include=TRUE, echo=TRUE}
-
 library(tidyverse)
+
+datos_clas <- iris %>%
+as_tibble()
+
+head(datos_clas, 5)
+```
+
+# Modelo de árbol de clasificación
+
+::: {.callout-note title="Variables del modelo"}
+
+Y (respuesta): Species → especie de la flor (setosa, versicolor, virginica).
+
+X (predictores):
+
+- Sepal.Length → largo del sépalo
+
+- Sepal.Width → ancho del sépalo
+
+- Petal.Length → largo del pétalo
+
+- Petal.Width → ancho del pétalo
+
+:::
+
+# Modelo de árbol de clasificación
+
+```{r include=TRUE, echo=TRUE}
 library(rpart)
+library(rpart.plot)
 
-datos <- readRDS("../Data/base_personas_gasto.rds") %>%
-  mutate(
-    pobreza3 = if_else(pobreza2 %in% c(1,2), "1", "0"),
-  ) %>% select(id_hogar,area,pobreza3, ingreso, sexo,
-               etnia,edad_hh, anoest_hh)
+set.seed(123)
 
-```
-# Ejemplo práctico: clasificación
-
-```{r include=TRUE, echo=TRUE}
-
-head(datos, 10)
-```
-# Ajuste del árbol de clasificación
-
-Ahora construiremos un árbol que predice si **el hogar es pobre** usando variables sociodemográficas.
-
-```{r include=TRUE, echo=TRUE}
-
-arbol_pobreza <- rpart(
-pobreza3 ~ area +sexo  + etnia + edad_hh + anoest_hh,
-data = datos,
+arbol_clas <- rpart(
+Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width,
+data   = datos_clas,
 method = "class"
 )
 
-```
 
+```
+# Visualización del árbol
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+rpart.plot(arbol_clas,type = 2, extra = 104,fallen.leaves = TRUE)
+```
 
 # Visualización del árbol
 
+::: {.callout-tip title="¿Qué evidenció el jefe al correr el modelo?"}
 
-```{r include=TRUE, echo=TRUE, fig.height=3, out.width='100%'}
-library(rpart.plot)
+Al generar el árbol, el jefe notó tres patrones inmediatos:
 
-rpart.plot(arbol_pobreza, type = 2, extra = 104, under = TRUE,
-           main = "Árbol de clasificación: pobreza (1 = pobre)")
+1. **Pétalos cortos → setosa**  
+   El primer corte fue `Petal.Length < 2.5`, creando un nodo completamente puro de *setosa*.  
+   La especie se distingue casi automáticamente.
 
-```
+2. **Pétalos largos pero angostos → versicolor**  
+   Entre las flores con pétalos más largos, el modelo separó por `Petal.Width < 1.8`,  
+   revelando que las versicolor tienen pétalos más delgados.
 
+3. **Pétalos largos y anchos → virginica**  
+   Cuando ambos atributos son grandes, el árbol clasifica con alta precisión como *virginica*.
 
-# Interpretación del árbol
+El jefe concluyó que **dos preguntas eran suficientes** para identificar la especie de cualquier flor.
 
-
-::: {.callout-tip title="Cómo leer el árbol"}
-
-El árbol realizó una sola división, usando la variable años de educación (anoest_hh), porque:
-
-- Los hogares con educación mostraron una probabilidad muy baja de pobreza (solo 15%).
-
-- Los hogares sin educación presentaron una probabilidad extremadamente alta de pobreza (100%).
-
-Esta diferencia es tan fuerte y tan clara que el modelo no necesitó más preguntas para separar a pobres y no pobres.
 :::
 
-# Interpretación del árbol
+# Predicción y matriz de confusión
 
-**¿Por qué NO se dividió por área, edad, o sexo?**
+Después de ver el árbol, el jefe del laboratorio quiso asegurarse de que el modelo no solo *luciera* claro, sino que realmente **predijera bien** la especie de las flores.  
+Por eso pidió calcular las **predicciones** del árbol y evaluar su desempeño mediante una **matriz de confusión**, comparando lo predicho con la especie real.
 
-Porque ninguna de esas variables generaba una diferencia tan marcada en la pobreza como la educación.
-Es decir:
-
-- Zona urbana vs rural → diferencias pequeñas.
-
-- Sexo del jefe → diferencias muy bajas.
-
-- Edad del jefe del hogar → poca separación entre pobres y no pobres.
-
-En cambio, la educación sí generó dos grupos extremadamente distintos, lo que hace que el algoritmo la tome como la mejor primera división.
-
-# Zoom a las predicciones del árbol
-
-Luego de ajustar el modelo, podemos obtener dos tipos de predicciones:
-
-1. La clase predicha (0 = no pobre, 1 = pobre)
-
-2. La probabilidad estimada de ser pobre
-
-Esto permite ver cómo el árbol clasifica a cada hogar según sus características.
-
-# Zoom a las predicciones del árbol
+# Predicción y matriz de confusión
 
 ```{r include=TRUE, echo=TRUE}
+# Predicciones del árbol
 
-# Predicción de la clase (0/1)
-pred_clase <- predict(arbol_pobreza, type = "class")
+datos_clas$pred_arbol <- predict(arbol_clas, type = "class")
 
-# Probabilidad predicha de ser pobre
-pred_prob <- predict(arbol_pobreza, type = "prob")[, "1"]
+# Matriz de confusión
 
-# Unir predicciones a la base original
-resultados <- datos %>%
-  mutate(
-    prediccion = pred_clase,
-    prob_pobre = pred_prob
-  )%>%
-  select(
-    anoest_hh,    pobreza3, 
-    prediccion, prob_pobre  
-  )
-
-
-```
-
-# Zoom a las predicciones del árbol
-
-```{r include=TRUE, echo=TRUE}
-
-head(resultados, 10)
-
-```
-
-# **Ejemplo práctico: árbol de regresión**
-
-Ahora construiremos un árbol que predice el **ingreso del hogar (`ingreso`)** usando variables sociodemográficas. 
-
-
-```{r include=TRUE, echo=TRUE} 
- arbol_reg <- rpart( 
-   ingreso ~ area +sexo  + etnia + edad_hh + anoest_hh, 
-   data = datos, 
-   method = "anova"    # regresión 
+tab_conf <- table(
+Real     = datos_clas$Species,
+Predicho = datos_clas$pred_arbol
 )
 
-``` 
 
 
+```
 
-# Visualización del árbol de regresión 
+# Predicción y matriz de confusión
 
-```{r include=TRUE, echo=TRUE, fig.height=3, out.width='80%'} 
- library(rpart.plot) 
+```{r include=TRUE, echo=TRUE}
 
- rpart.plot(arbol_reg,type = 2,under = TRUE, 
-            main = "Árbol de regresión: ingreso del hogar", 
- cex = 1.1 
- ) 
+tab_conf
 
-``` 
 
-# Interpretación del árbol de regresión 
+```
+::: {.callout-tip title="Interpretación rápida de la matriz de confusión"}
 
-::: {.callout-tip title="Interpretación (regresión)"}
+- Las celdas de la diagonal (setosa→setosa, versicolor→versicolor, etc.)
+son las flores correctamente clasificadas.
 
-- Cada nodo aplica una regla para dividir a los hogares según sus características.
-
-- Cada hoja muestra el ingreso promedio del grupo formado.
-
-- El árbol elige las divisiones que reducen la variabilidad del ingreso, creando grupos más homogéneos.
-
-En este caso, primero divide por educación, porque es la variable que más diferencia los ingresos, y luego por edad, para refinar aún más la predicción.
+- Las celdas fuera de la diagonal muestran errores de clasificación
+(por ejemplo, versicolor predicha como virginica).
 :::
 
-# Zoom a las predicciones del árbol
+# Exactitud (accuracy) del árbol
+
+Al revisar la matriz de confusión, el jefe del laboratorio ya podía ver dónde el modelo acertaba y dónde confundía especies.  
+Pero quiso una medida **resumida y directa** que respondiera a la pregunta clave:
+
+**“En promedio, ¿qué tan bien está clasificando el árbol nuestras flores?”**
+
+Para eso calculó la **exactitud (accuracy)**, la proporción total de flores correctamente clasificadas por el modelo.
 
 ```{r include=TRUE, echo=TRUE}
-# Predicción del ingreso para cada hogar
-ingreso_pred <- predict(arbol_reg)
+accuracy_arbol <- mean(datos_clas$Species == datos_clas$pred_arbol)
 
-# Nodo terminal al que pertenece cada hogar
-nodos <- arbol_reg$where
+```
+# Exactitud (accuracy) del árbol
+```{r include=TRUE, echo=TRUE}
+accuracy_arbol
 
-# Tabla limpia de resultados
-resultados_reg <- datos %>%
-  mutate(
-    ingreso_obs  = ingreso,
-    ingreso_pred = ingreso_pred,
-    nodo_terminal = nodos
-  ) %>%
-  select(nodo_terminal, ingreso_obs, ingreso_pred, 
-         anoest_hh, edad_hh, area, sexo)
+```
 
-``` 
+::: {.callout-note title="Exactitud del modelo"}
 
-# Zoom a las predicciones del árbol
+En este caso, el árbol logra una exactitud muy alta, lo que significa que:
+
+El instituto puede usar este árbol como una herramienta eficaz para identificar automáticamente la especie de nuevas flores a partir de sus mediciones.
+:::
+
+# Predicción para una nueva flor
 
 ```{r include=TRUE, echo=TRUE}
-head(resultados_reg, 10)
-``` 
+nueva_flor <- tibble(
+Sepal.Length = 5.5,
+Sepal.Width  = 3.5,
+Petal.Length = 1.4,
+Petal.Width  = 0.2
+)
 
-# Zoom a las predicciones del árbol
+# Clase predicha
 
-::: {.callout-note title="¿Qué vemos en esta tabla?"}
+predict(arbol_clas, newdata = nueva_flor, type = "class")
 
-- ingreso_obs: ingreso observado del hogar en la base original.
+```
 
-- ingreso_pred: ingreso que el árbol de regresión predice para ese hogar.
+# Predicción para una nueva flor
 
-- nodo_terminal: grupo (hoja) del árbol al que pertenece el hogar, según su perfil sociodemográfico.
+::: {.callout-tip title="Cierre de la historia"}
 
-Dentro de cada nodo, el modelo asigna un mismo ingreso predicho a todos los hogares, que corresponde al promedio del ingreso en ese grupo.
+El botánico ya no necesita clasificar a mano cada flor:
+introduce las 4 medidas en el modelo y el árbol de clasificación sugiere la especie más probable, con una precisión muy alta.
+:::
 
-Esta tabla permite comparar el ingreso real con el ingreso estimado por el modelo y entender cómo el árbol traduce las características del hogar en una predicción numérica.
+# ¿Y cómo sería si Y fuera una variable continua?
+
+::: {.callout-note title="Si la variable Y fuera cuantitativa"}
+
+Hasta ahora trabajamos con un árbol de clasificación, porque la respuesta era una especie (categoría). Pero si el laboratorio quisiera predecir un valor numérico, por ejemplo:
+
+- el peso de la flor,
+
+- la cantidad de néctar,
+
+- o la longitud esperada del tallo,
+
+entonces el modelo apropiado sería un **árbol de regresión.**
+
+En lugar de buscar nodos “puros” de una clase, el árbol intentaría crear grupos donde los valores numéricos de Y fueran lo más similares posible.
+
+- Cada división se escogería para minimizar la variabilidad interna (SST).
+
+- Y en cada hoja, la predicción sería simplemente el promedio de Y en ese nodo.
+
+Así, el árbol ya no “clasifica especies”, sino que estima un número.
 :::
 
 # Resumen  de la Clase

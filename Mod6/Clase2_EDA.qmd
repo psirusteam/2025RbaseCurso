@@ -1,0 +1,224 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 6"
+subtitle: "Clase 2: Exploración de datos"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+Antes de ajustar un modelo estadístico (regresión lineal, logística, etc.), necesitamos
+entender la estructura, patrones y calidad de los datos. A este proceso se le llama
+Exploración de Datos (EDA).
+
+::: {.callout-tip title="Idea principal"}
+La exploración de datos permite conocer el dataset antes de modelar, detectar problemas y
+comprender relaciones entre variables.
+:::
+
+# ¿Para qué sirve el EDA?
+
+-   Identificar valores extremos (outliers).
+
+-   Detectar datos faltantes o inconsistentes.
+
+-   Revisar distribuciones de las variables.
+
+-   Evaluar relaciones entre pares de variables.
+
+-   Guiar la selección del modelo estadístico adecuado.
+
+# Cómo se exploran las variables según su tipo
+
+| Tipo de variable        | Cómo se explora | Herramientas |
+|-------------------------|------------------|--------------|
+| **Numérica continua**   | Distribución, outliers, tendencia central | Histogramas, boxplots |
+| **Numérica discreta**   | Frecuencias y valores dominantes          | Tablas, histogramas   |
+| **Categórica nominal**  | Proporciones por categoría                 | Tablas, barras        |
+| **Categórica ordinal**  | Tendencias según orden                     | Barras ordenadas      |
+| **Binaria**             | Balance entre dos grupos                   | Proporciones, barras  |
+| **Fecha / tiempo**      | Tendencias y estacionalidad                | Series de tiempo      |
+
+# Historia: el equipo que monitoreaba la calidad del aire
+
+Un equipo de estadística ambiental trabajaba con datos diarios de calidad del aire, donde se
+medían, entre otros:
+
+- concentración de ozono (Ozone),
+- radiación solar (Solar.R),
+- velocidad del viento (Wind),
+- temperatura (Temp),
+- mes y día de la medición.
+
+# Historia: el equipo que monitoreaba la calidad del aire
+
+Al comenzar el análisis, se dieron cuenta de que:
+
+- había valores faltantes en las mediciones de ozono y radiación,
+- algunas variables tenían distribuciones muy asimétricas,
+- los patrones parecían diferentes según el mes.
+
+Antes de ajustar cualquier modelo, el equipo decidió hacer una **exploración sistemática de
+los datos**.
+
+
+```{r, echo=TRUE, eval=TRUE}
+datos_eda <- airquality
+head(datos_eda, 5)
+```
+
+# Exploración univariada: distribución de las variables
+
+El primer paso fue examinar cada variable por separado:
+
+- ¿Cuál es el rango de Ozone?
+
+- ¿Hay valores extremos en Wind o Temp?
+
+- ¿Cómo se distribuye Solar.R?
+
+\tiny
+```{r, echo=TRUE, eval=TRUE}
+summary(datos_eda)
+```
+
+# Exploración univariada: distribución de las variables
+
+::: {.callout-note title="Primer diagnóstico"}
+El resumen reveló:
+
+- valores faltantes (NA) en Ozone y Solar.R,
+
+- diferencias importantes entre mínimos y máximos,
+
+- posibles valores extremos en Ozone.
+:::
+
+# Exploración univariada
+
+El equipo revisó la distribución de Ozone para identificar outliers y asimetrías.
+
+```{r, echo=TRUE, eval=TRUE, fig.height=5, out.width='100%'}
+hist(datos_eda$Ozone,
+main = "Distribución de Ozone",
+xlab = "Ozone (ppb)")
+
+```
+
+# Exploración univariada
+
+El equipo revisó la distribución de Ozone para identificar outliers y asimetrías.
+
+```{r, echo=TRUE, eval=TRUE, fig.height=5, out.width='100%'}
+boxplot(datos_eda$Ozone,
+main = "Boxplot de Ozone",
+ylab = "Ozone (ppb)")
+
+```
+
+# Exploración univariada
+
+::: {.callout-tip title="¿Qué observaron?"}
+
+- Distribución asimétrica hacia la derecha.
+
+- Presencia de valores altos que podrían considerarse outliers.
+
+- Datos faltantes que deben tratarse antes de modelar.
+:::
+
+# Datos faltantes y calidad de la información
+
+```{r, echo=TRUE, eval=TRUE}
+colSums(is.na(datos_eda))
+```
+::: {.callout-warning title="Hallazgos de calidad de datos"}
+
+Ozone y Solar.R presentan un número no despreciable de valores faltantes.
+
+Cualquier análisis posterior debe decidir cómo tratarlos: eliminación, imputación, etc.
+:::
+
+# Exploración bivariada: relaciones entre variables
+
+Luego, el equipo examinó la relación entre pares de variables numéricas.
+
+```{r, echo=TRUE, eval=TRUE, fig.height=5, out.width='100%'}
+plot(datos_eda$Temp, datos_eda$Ozone,
+xlab = "Temperatura (°F)",
+ylab = "Ozone (ppb)",
+main = "Ozone vs Temperatura")
+```
+
+# Exploración bivariada: variable temporal
+
+```{r, echo=TRUE, eval=TRUE, fig.height=5, out.width='100%'}
+boxplot(Ozone ~ Month,
+data = datos_eda,
+xlab = "Mes",
+ylab = "Ozone (ppb)",
+main = "Ozone por mes")
+```
+
+# Exploración multivariada
+
+Además de gráficos simples, el equipo podría:
+
+- calcular una matriz de correlación entre Ozone, Solar.R, Wind y Temp
+
+- usar gráficos de pares (pairs) para ver patrones
+
+```{r, echo=TRUE, eval=TRUE, fig.height=5, out.width='100%'}
+cor(na.omit(datos_eda[, c("Ozone", "Solar.R", "Wind", "Temp")]))
+```
+# Transformaciones sugeridas por el EDA
+
+Con base en todo lo observado, el equipo definió una serie de pasos antes de modelar:
+
+- tratar valores faltantes de Ozone y Solar.R,
+
+- considerar transformaciones logarítmicas para variables muy asimétricas,
+
+- incluir interacciones o términos no lineales si las relaciones no son lineales,
+
+- tener en cuenta la estacionalidad (Month) en cualquier modelo de predicción.
+
+::: {.callout-important title="Moraleja de la historia"}
+El EDA permitió detectar problemas y patrones que no eran evidentes inicialmente,
+evitando ajustar modelos sobre una base con valores faltantes, outliers no tratados
+y sin considerar efectos estacionales.
+:::
+
+# Resumen de la clase
+
+| Concepto                     | Idea clave                                                               |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| **EDA**                      | Primera etapa del análisis: conocer el dataset antes de modelar.         |
+| **Exploración univariada**   | Revisa distribución, outliers y valores faltantes por variable.          |
+| **Exploración bivariada**    | Analiza relaciones entre pares de variables.                             |
+| **Exploración multivariada** | Busca patrones conjuntos y correlaciones.                                |
+| **Calidad de datos**         | Identifica faltantes, errores y codificaciones inconsistentes.           |
+

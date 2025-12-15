@@ -1,0 +1,143 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 9"
+subtitle: "Clase 2: Operaciones con polígonos"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En esta clase continuamos desarrollando el trabajo con datos espaciales, centrándonos en las operaciones fundamentales que pueden aplicarse a polígonos. Mientras que en la Clase 1 nos enfocamos en qué son los shapefiles y cómo se representan las geometrías, ahora avanzamos hacia la manipulación y análisis de esas geometrías utilizando el paquete `sf`. Este enfoque moderno permite trabajar con polígonos de manera intuitiva, integrando cálculos, transformaciones y cruces espaciales.
+
+# ¿Qué es un objeto sf?
+
+Los objetos `sf` funcionan como un data frame al que se le agrega una columna especial llamada `geometry`. 
+
+- `geometry` almacena la forma espacial de cada unidad utilizando el estándar Simple Features. La estructura es simple: cada fila corresponde a un polígono y cada columna adicional representa atributos descriptivos. 
+
+# Cargue de un shape
+
+\small
+```{r include=TRUE, echo=TRUE}
+library(sf)
+distritos <- st_read("../Data/shape/DISTRITOS.shp")
+```
+
+# Exploración inicial del objeto espacial
+
+Un objeto sf puede revisarse directamente en consola para observar sus atributos y su geometría. La función st_geometry_type() permite identificar si se trata de polígonos o multipolígonos. Por su parte, st_crs() informa sobre el sistema de referencia en el que están expresadas las coordenadas.
+
+\tiny
+
+```{r include=TRUE, echo=TRUE}
+unique(st_geometry_type(distritos))
+st_crs(distritos)
+```
+# Exploración inicial del objeto espacial
+
+::: {.callout-tip title="Interpretación del tipo de geometría y del CRS"}
+- El objeto contiene geometrías de tipo MULTIPOLYGON, lo que implica que un distrito puede estar formado por una o varias piezas espaciales.
+
+- El CRS reportado corresponde a WGS84 (EPSG:4326), expresado en grados de latitud y longitud. Este sistema es adecuado para visualización, pero no para medir áreas, distancias o perímetros. Antes de realizar cálculos geométricos, es necesario transformar la capa a un CRS proyectado (unidades en metros).
+:::
+
+# Transformación del sistema de referencia
+
+Para ejecutar cálculos métricos coherentes, transformamos los datos a un sistema proyectado. Este proceso no altera atributos, pero ajusta la geometría para poder calcular área, perímetro y distancias correctamente.
+
+```{r include=TRUE, echo=TRUE}
+distritos_proj <- st_transform(distritos, crs = 32719)
+```
+
+# Cálculo de áreas
+
+El área es una de las primeras medidas geométricas que se suelen calcular. Con st_area() obtenemos la superficie de cada distrito en metros cuadrados.
+
+\small
+```{r include=TRUE, echo=TRUE}
+distritos_proj$area_m2 <- st_area(distritos_proj)
+```
+
+Si se desea expresar en kilómetros cuadrados, basta dividir entre un millón:
+
+\small
+```{r include=TRUE, echo=TRUE}
+distritos_proj$area_km2 <- as.numeric(distritos_proj$area_m2) / 1e6
+```
+
+# Perímetro del distrito
+
+El perímetro corresponde a la longitud del borde exterior del polígono. Para obtenerlo, primero se convierte la geometría a líneas y luego se calcula su longitud.
+
+\small
+```{r include=TRUE, echo=TRUE}
+distritos_proj$perimetro_m <- st_length(st_cast(distritos_proj, "MULTILINESTRING"))
+```
+
+# Centroide geométrico
+
+El centroide representa el punto central del polígono y es útil para ubicar etiquetas o realizar análisis de proximidad.
+
+\small
+```{r include=TRUE, echo=TRUE}
+centroides <- st_centroid(distritos_proj)
+```
+
+# Buffers: zonas de influencia
+
+Los buffers permiten crear áreas a una distancia fija alrededor de cada distrito. Son útiles en la planificación territorial, por ejemplo, para identificar zonas dentro de 3 km de un límite administrativo.
+
+\small
+```{r include=TRUE, echo=TRUE}
+buffer_3km <- st_buffer(distritos_proj, dist = 3000)
+```
+
+# Unión y disolución
+
+La unión elimina fronteras internas entre polígonos, mientras que la disolución los agrupa según un atributo. Esto resulta útil para generar niveles agregados.
+
+```{r include=TRUE, echo=TRUE}
+library(tidyverse)
+provincias <- distritos_proj %>%
+  group_by(PROVINCIA) %>%
+  summarise(area_km2 = sum(as.numeric(area_m2), na.rm = TRUE) / 1e6)
+
+dim(distritos_proj)
+dim(provincias)
+```
+
+# Resumen de la clase
+
+| Tema central                     | Qué aprendimos                                                                 |
+|----------------------------------|---------------------------------------------------------------------------------|
+| Tipo de geometría (sf)          | Identificar si los objetos son POLYGON, MULTIPOLYGON u otras geometrías.       |
+| Sistema de referencia (CRS)      | Interpretar el CRS y reconocer cuándo transformar de grados a metros.          |
+| Transformación espacial          | Aplicar `st_transform()` para preparar datos para análisis métrico.            |
+| Cálculo de métricas geométricas | Obtener área, perímetro y centroides de polígonos con funciones de `sf`.       |
+| Buffers                          | Crear zonas de influencia mediante distancias fijas alrededor de geometrías.   |
+| Unión y disolución              | Agrupar unidades por atributos (ej. provincias) y fusionar sus polígonos.      |
+
+

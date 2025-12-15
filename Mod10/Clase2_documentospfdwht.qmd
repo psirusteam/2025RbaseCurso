@@ -1,0 +1,212 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 10"
+subtitle: "Clase 2: Documentos en Word, PDF y HTML"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+Recordamos de la Clase 1 que R Markdown y Quarto nos permiten integrar código, resultados y texto para generar documentos reproducibles.
+
+En esta clase nos enfocaremos en cómo generar los formatos de salida más comunes:
+
+- HTML (Archivos web interactivos)
+
+- Word (Documentos .docx)
+
+- PDF (Documentos con formato LaTeX)
+
+# Generando Documentos
+
+El proceso para crear un documento a partir de un archivo .Rmd (o .qmd) se llama renderizado o tejer (Knit en RStudio).
+
+::: {.callout-tip title="Pasos Clave"}
+
+1. Definir el formato en el Encabezado YAML.
+2. Hacer clic en el botón Knit de RStudio (o usar la función rmarkdown::render() en la consola).
+3. RStudio ejecuta el código, lo combina con el texto Markdown y genera el documento final.
+
+**Flujo de trabajo: .Rmd + Knit $\rightarrow$ Documento final (HTML, PDF, Word, etc.)**
+
+:::
+
+# Documentos HTML: El formato por defecto
+
+**¿Por qué usar HTML?**
+
+- Es el formato predeterminado y más flexible de R Markdown.
+
+- No requiere instalaciones adicionales (como LaTeX para PDF).
+
+- Genera documentos interactivos: tablas con filtros, gráficos dinámicos, etc.
+
+- Ideal para publicar en la web o compartir rápidamente por email.
+
+# Configuración en YAML
+
+``` yaml
+---
+title: "Reporte de Análisis"
+output: html_document
+---
+```
+
+# Documentos HTML: Personalización
+
+**Opciones comunes en html_document**
+
+Podemos agregar opciones bajo el formato de salida para personalizar el resultado.
+
+| Opción YAML | ¿Qué hace? |
+| :--- | :--- |
+| `toc: true` | Agrega una **Tabla de Contenido** (índice) al inicio. |
+| `toc_float: true` | Hace que la Tabla de Contenido se mantenga visible (flotando) al hacer scroll. |
+| `number_sections: true` | Enumera automáticamente los títulos y subtítulos. |
+| `theme: cerulean` | Cambia el estilo visual (colores, fuentes) del documento. |
+
+# Ejemplo DE YAML para HTML
+
+``` yaml
+---
+title: "Reporte Interactivo"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: readable
+---
+```
+
+# HTML: Interactividad y Web
+
+| Característica | ¿Qué permite? | Ejemplos clave |
+| :--- | :--- | :--- |
+| **Interactividad** | El lector puede manipular los datos directamente. | Gráficos `plotly` (zoom, tooltip). |
+| **Estructura Web** | Fácil despliegue y visualización en cualquier navegador. | Tablas con filtros y búsqueda (`DT`). |
+| **Dashboards** | Crear un panel de control simple y estructurado. | `Flexdashboard` y `Shiny`. |
+
+# Documentos Word: Facilidad de edición
+
+**¿Por qué usar Word?**
+
+- Genera un archivo .docx editable en Microsoft Word u otros procesadores de texto.
+
+- Permite a los usuarios no técnicos modificar el texto, manteniendo los resultados (gráficos y tablas) generados por R.
+
+- Es ideal para entregables que deben pasar por un proceso de revisión y edición manual.
+
+# Configuración en YAML
+
+Se utiliza el formato word_document.
+
+``` yaml
+---
+title: "Informe para Dirección"
+output: word_document
+---
+```
+
+# Documentos Word: Plantillas
+
+**Usando una plantilla**
+
+Para que el documento Word (.docx) tenga el estilo, logo y formato de tu organización, puedes usar una plantilla de referencia (o reference document).
+
+- Crea un archivo Word con los estilos deseados (tipografía, encabezados, etc.).
+
+- Lo especificas en el YAML:
+
+``` yaml
+---
+title: "Informe con Estilo Corporativo"
+output: 
+  word_document:
+    reference_docx: "mi_plantilla.docx"
+---
+```
+# Word: Colaboración y Estilos
+
+| Característica | ¿Qué permite? | Controlado por... |
+| :--- | :--- | :--- |
+| **Edición Final** | Permite que usuarios no técnicos editen el texto. | Microsoft Word (.docx). |
+| **Estilos Corp.** | Heredar fuentes, márgenes, encabezados y pies de página. | Plantilla `reference_docx`. |
+| **Automatización** | Manipular el documento después de renderizar. | Paquete `officer`. |
+
+# Documentos PDF: Formato profesional y fijo
+
+**¿Por qué usar PDF?**
+
+- Genera documentos en formato rígido y fijo, ideal para informes finales o impresión.
+
+- Es el formato preferido para publicaciones científicas o reportes muy formales.
+
+- Ofrece un control preciso sobre la tipografía y el diseño, gracias a LaTeX.
+
+# Configuración en YAML
+
+Se utiliza el formato pdf_document.
+
+``` yaml
+---
+title: "Reporte Técnico Final"
+output: pdf_document
+---
+```
+
+# Documentos PDF: Requisitos y Control
+
+**Requisito: Instalación de LaTeX**
+
+Para generar un PDF desde R Markdown, debes tener instalado un sistema LaTeX.
+
+- La opción más sencilla y liviana es TinyTeX, que se instala directamente desde R:
+
+``` yaml
+install.packages("tinytex") 
+tinytex::install_tinytex()
+
+```
+# Documentos PDF: Requisitos y Control
+
+**Opciones de Control**
+
+
+| Opción YAML | ¿Qué hace? |
+| :--- | :--- |
+| `toc: true` | Agrega la Tabla de Contenido. |
+| `latex_engine: xelatex` | Define el motor de LaTeX (útil para soportar más fuentes y caracteres especiales, como tildes). |
+| `fig_caption: true` | Agrega etiquetas y numeración automática a las figuras. |
+
+
+# PDF: Rigor, Diseño Fijo
+
+| Característica | ¿Qué permite? | Herramienta clave |
+| :--- | :--- | :--- |
+| **Rigor Formal** | Máximo control sobre el diseño y la maquetación. | LaTeX (requiere TinyTeX). |
+| **Citación** | Generar citas y bibliografía profesionalmente. | Campo `bibliography` en YAML. |
+| **Tablas Avanzadas** | Maquetación compleja de tablas largas y detalladas. | Paquete `kableExtra`. |
+

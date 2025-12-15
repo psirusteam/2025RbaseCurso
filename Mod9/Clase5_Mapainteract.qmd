@@ -1,0 +1,190 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 9"
+subtitle: "Clase 5:  Mapas interactivos"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En esta clase exploraremos cómo generar **mapas interactivos** en R utilizando dos herramientas principales: `tmap` en modo interactivo y el paquete `leaflet`. Mientras que los mapas estáticos son adecuados para informes y presentaciones, los mapas interactivos permiten explorar el territorio mediante zoom, desplazamiento y visualización dinámica de atributos. Esto los convierte en herramientas valiosas para análisis territoriales exploratorios y aplicaciones de comunicación de datos.
+
+# Datos de base
+
+Usaremos el mismo shapefile de distritos que hemos empleado en las clases anteriores. De esta manera podemos centrarnos en las funciones de tmap sin cambiar la fuente de datos.
+
+\small
+```{r include=TRUE, echo=TRUE}
+library(sf)
+library(tmap)
+distritos <- st_read("../Data/shape/DISTRITOS.shp")
+```
+
+# Activando el modo interactivo en tmap
+
+`tmap` cuenta con dos modos de visualización:  
+- **plot**: mapas estáticos  
+- **view**: mapas interactivos estilo visor web  
+
+Para activar el modo interactivo:
+
+```{r include=TRUE, echo=TRUE}
+tmap_mode("view")
+```
+
+En este modo, los mapas responden al zoom, permiten seleccionar objetos y muestran atributos al hacer clic.
+
+# Mapa interactivo básico
+
+El siguiente mapa dibuja solo la geometría base de los distritos. Esto permite comenzar la exploración:
+
+```{r  eval=FALSE,  echo = TRUE, fig.height=5, out.width='80%'}
+tm_shape(distritos) +
+tm_polygons()
+```
+
+# Mapa interactivo temático
+
+Podemos colorear los polígonos según una variable categórica, como la provincia:
+
+```{r  eval=FALSE,  echo = TRUE,fig.height=5, out.width='80%'}
+tm_shape(distritos) +
+tm_polygons("PROVINCIA",
+palette = "Set3",
+alpha = 0.7) +
+tm_view(set.zoom.limits = c(5, 12))
+
+```
+
+
+# Cálculo de área para variables continuas
+
+Si queremos construir un mapa interactivo basado en una variable continua, podemos reutilizar el cálculo de áreas.
+
+```{r include=TRUE,  echo=TRUE}
+distritos_proj <- st_transform(distritos, crs = 32719)
+distritos_proj$area_m2  <- st_area(distritos_proj)
+distritos_proj$area_km2 <- as.numeric(distritos_proj$area_m2) / 1e6
+```
+
+# Mapa continuo interactivo
+
+Con area_km2 podemos elaborar un mapa interactivo que muestre el tamaño relativo de cada distrito.
+
+
+```{r include=TRUE,  echo = TRUE, eval=FALSE,  fig.height=5, out.width='80%'}
+tm_shape(distritos_proj) +
+tm_polygons("area_km2",
+style = "quantile",
+palette = "viridis",
+title = "Área (km²)") +
+tm_view(set.zoom.limits = c(5, 12))
+
+
+```
+
+
+# Añadiendo centroides al mapa interactivo
+
+Podemos complementar el mapa con puntos correspondientes a los centroides de cada distrito.
+
+```{r include=TRUE,  echo = TRUE, eval=FALSE,  fig.height=5, out.width='80%'}
+centroides <- st_centroid(distritos_proj)
+
+tm_shape(distritos_proj) +
+tm_polygons(col = "grey90") +
+tm_shape(centroides) +
+tm_symbols(col = "red", size = 0.05) +
+tm_view(set.zoom.limits = c(5, 12))
+
+```
+
+Al hacer clic en un centrodie, el visor muestra sus atributos asociados
+
+# Mapas interactivos con leaflet
+
+Además de tmap, el paquete leaflet permite crear visores web altamente personalizables. Es el estándar para construir dashboards interactivos en Shiny.
+
+```{r include=TRUE,  echo = TRUE, eval=FALSE,  fig.height=5, out.width='80%'}
+library(leaflet)
+
+leaflet(distritos_proj) %>%
+addTiles() %>%
+addPolygons(color = "white",
+weight = 1,
+fillColor = "steelblue",
+fillOpacity = 0.4,
+popup = ~paste("Distrito:", NOMBRE_DIST))
+
+```
+
+Con popup = podemos mostrar texto dinámico al hacer clic en un polígono.
+
+# Escalas de color en leaflet
+
+leaflet permite definir escalas continuas o discretas:
+
+```{r include=TRUE,  echo = TRUE, eval=FALSE,  fig.height=5, out.width='80%'}
+pal <- colorQuantile("YlGnBu", distritos_proj$area_km2, n = 5)
+
+leaflet(distritos_proj) %>%
+addTiles() %>%
+addPolygons(fillColor = ~pal(area_km2),
+fillOpacity = 0.7,
+color = "white",
+weight = 0.3,
+popup = ~paste("Área:", round(area_km2, 2), "km²")) %>%
+addLegend("bottomright",
+pal = pal,
+values = distritos_proj$area_km2,
+title = "Área (km²)")
+```
+
+Este mapa tiene leyenda interactiva y valores proporcionales por distrito.
+
+
+
+# Comparación entre tmap y leaflet
+
+| Característica                 | tmap (view)                   | leaflet                       |
+| ------------------------------ | ----------------------------- | ------------------------------ |
+| Exploración interactiva        | Buena                         | Muy fluida                     |
+| Estilo cartográfico            | Muy alto                       | Básico por defecto             |
+| Integración con Shiny          | Limitada                      | Muy alta                       |
+| Facilidad para mapas temáticos | Excelente                     | Buena                          |
+| Simplicidad de código          | Buena                         | Muy buena                      |
+           
+
+# Resumen de la clase
+
+| Elemento aprendido           | Paquete | Función principal                          |
+| ---------------------------- | ------- | ------------------------------------------ |
+| Activar modo interactivo     | tmap    | `tmap_mode("view")`                        |
+| Mapa básico                  | tmap    | `tm_polygons()`                            |
+| Mapas temáticos interactivos | tmap    | Relleno por variable categórica o continua |
+| Visualización de centroides  | tmap    | `tm_symbols()`                             |
+| Mapas interactivos web       | leaflet | `addPolygons()` + popups                   |
+| Escalas de color             | leaflet | `colorQuantile()`, `addLegend()`           |

@@ -30,7 +30,146 @@ library(printr)
 
 # Introducción
 
-En ciencia de datos trabajamos con preguntas que requieren entender patrones, variabilidad y relaciones entre variables. Para responderlas necesitamos una herramienta que traduzca esos fenómenos a una estructura formal que podamos analizar.
+En ciencia de datos trabajamos con preguntas que requieren entender patrones, variabilidad
+y relaciones entre variables. Para responderlas necesitamos una herramienta que traduzca
+esos fenómenos a una estructura formal que podamos analizar.
 
 **Esa herramienta es el modelo estadístico.**
+
+# ¿Qué es un modelo estadístico?
+
+::: {.callout-tip title="Idea central"}
+Un modelo estadístico es una representación simplificada de un fenómeno real, que describe
+cómo una variable depende de otras mediante relaciones matemáticas y supuestos
+probabilísticos.
+:::
+
+El objetivo de un modelo es:
+
+-   Explicar: entender cómo y por qué cambia una variable.
+
+-   Predecir: estimar valores desconocidos o futuros.
+
+-   Inferir: evaluar el efecto de una variable sobre otra.
+
+# Componentes de un modelo estadístico
+
+Todo modelo tiene tres elementos fundamentales:
+
+1.  Variables
+
+Variable respuesta (Y): lo que queremos explicar o predecir.
+
+Variables explicativas (X): factores que influyen en Y.
+
+2.  Estructura matemática
+
+-   La forma que describe cómo se relaciona Y con X. Ejemplos:
+
+-   Lineal, no lineal
+
+-   Aditiva
+
+-   Basada en distancias
+
+-   Árboles de decisión
+
+-   Redes neuronales
+
+-   Modelos probabilísticos (logísticos, Poisson, etc.)
+
+# Componentes de un modelo estadístico
+
+3.  Supuestos probabilísticos
+
+En estadística, siempre asumimos que existe un componente aleatorio: ruido, incertidumbre,
+variabilidad no explicada.
+
+Ejemplo general:
+
+$$Y = f(X) + \varepsilon$$
+
+Donde:
+
+-   $f(X)$ = patrón sistemático
+-   $\varepsilon$ = variación aleatoria
+
+# ¿Por qué necesitamos modelos estadísticos?
+
+Porque los datos nunca hablan solos: necesitamos herramientas que nos permitan interpretar
+y resumir la información.
+
+Los modelos ayudan a:
+
+-   Identificar patrones en datos complejos.
+
+-   Separar señal de ruido.
+
+-   Realizar predicciones útiles y cuantificables.
+
+-   Evaluar hipótesis y tomar decisiones informadas.
+
+-   Entender relaciones entre variables (asociaciones, efectos).
+
+
+# Tipos de modelos según el objetivo
+
+1. Modelos de explicación
+
+- Buscan entender la relación entre variables.
+
+- Ejemplo: regresión lineal para explicar cambios en el ingreso.
+
+2. Modelos de predicción
+
+- Su objetivo es acertar el valor futuro o desconocido.
+
+- Ejemplos: árboles, random forest, redes neuronales.
+
+# Tipos de modelos según el objetivo
+
+3. Modelos de clasificación
+
+- Predicen categorías.
+
+- Ejemplo: pobreza (0 = no pobre, 1 = pobre).
+
+4. Modelos de regresión
+
+- Predicen valores numéricos.
+
+- Ejemplo: ingreso del hogar.
+
+
+# Un modelo no es la realidad
+
+::: {.callout-warning title="Importante"}
+Un modelo es una simplificación, no una copia del mundo real.
+Nos ayuda a ver patrones, pero siempre tiene limitaciones y supuestos.
+:::
+
+Aunque un modelo nunca es perfecto, un buen modelo permite capturar suficiente información para responder una pregunta relevante.
+
+# Ejemplo sencillo
+
+Supongamos que queremos explicar el ingreso $(Y)$ según la educación $(X)$:
+
+$$ingreso = \beta_{0} + \beta_{1} \cdot escolaridad + \varepsilon$$
+Este es un modelo estadístico muy simple, que dice:
+
+Por cada año adicional de educación, cambia el ingreso en un promedio $\beta_{1}$
+
+- No todos ganan exactamente ese valor ⇒ existe ruido $\varepsilon$
+
+Es simplificado, pero útil para entender tendencias generales.
+
+# Resumen
+
+| Concepto               | Explicación                                                            |
+| ---------------------- | ---------------------------------------------------------------------- |
+| **Modelo estadístico** | Representación matemática y probabilística de un fenómeno real.        |
+| **Objetivos**          | Explicar, predecir, inferir, generalizar.                              |
+| **Componentes**        | Variables, estructura matemática, supuestos probabilísticos.           |
+| **Importancia**        | Permiten interpretar datos, identificar relaciones y tomar decisiones. |
+| **Limitación**         | Siempre son simplificaciones; dependen de sus supuestos.               |
 

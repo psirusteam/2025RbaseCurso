@@ -1,0 +1,247 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 9"
+subtitle: "Clase 4:  Mapas con tmap"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En la clase anterior construimos mapas con sf y ggplot2, partiendo de la carga de un shapefile y avanzando hacia mapas temáticos sencillos. En esta clase el foco se traslada a tmap, un paquete diseñado específicamente para la creación de mapas estáticos y dinámicos en R.
+
+tmap ofrece una sintaxis pensada para cartografía, con una lógica similar a la de ggplot2, pero adaptada a objetos espaciales. Permite controlar de manera detallada colores, leyendas, escalas, paneles múltiples y modos interactivos.
+
+# Datos de base
+
+Usaremos el mismo shapefile de distritos que hemos empleado en las clases anteriores. De esta manera podemos centrarnos en las funciones de tmap sin cambiar la fuente de datos.
+
+\small
+```{r include=TRUE, echo=TRUE}
+library(sf)
+library(tmap)
+distritos <- st_read("../Data/shape/DISTRITOS.shp")
+```
+
+
+# Primer contacto con tmap
+
+El paquete tmap trabaja en torno a la función tm_shape(), que define la capa espacial a utilizar, y a una serie de funciones tm_ que añaden elementos cartográficos, como polígonos, bordes o leyendas.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+tm_shape(distritos) +
+tm_polygons()
+```
+
+# Modos de trabajo: plot y view
+
+tmap dispone de dos modos de visualización:
+
+- Un modo plot, pensado para mapas estáticos (impresión, PDF, Beamer).
+
+- Un modo view, orientado a mapas interactivos sobre fondo web.
+
+# Modos de trabajo: plot y view
+
+Para las diapositivas, utilizaremos principalmente el modo plot.
+
+```{r include=TRUE, echo=TRUE}
+tmap_mode("plot")
+```
+
+Con esta instrucción, todos los mapas que se generen a continuación se mostrarán como figuras estáticas adecuadas para nuestros slides.
+
+# Mejora del mapa base
+
+A partir del mapa básico podemos modificar el estilo del relleno y del borde para mejorar su lectura. Por ejemplo, un relleno gris claro y bordes más visibles.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+tm_shape(distritos) +
+tm_polygons(col = "grey90", border.col = "white") +
+tm_layout(title = "Distritos - mapa base con tmap")
+```
+
+# Mapas temáticos por categoría
+
+Una de las fortalezas de tmap es su capacidad para construir mapas temáticos de forma directa. Si existe una variable categórica como PROVINCIA, podemos usarla para colorear los distritos.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+map <- tm_shape(distritos) +
+tm_polygons("PROVINCIA") +
+tm_layout(title = "Distritos coloreados por provincia",
+legend.outside = TRUE)
+```
+
+# Mapas temáticos por categoría
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+map
+```
+# Preparación de una variable continua
+
+Para un mapa temático continuo necesitamos una variable numérica. Podemos reutilizar la lógica de clases anteriores y calcular el área de cada distrito en kilómetros cuadrados sobre un CRS proyectado.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+distritos_proj <- st_transform(distritos, crs = 32719)
+distritos_proj$area_m2  <- st_area(distritos_proj)
+distritos_proj$area_km2 <- as.numeric(distritos_proj$area_m2) / 1e6
+```
+
+# Mapa temático continuo con tmap
+
+Con la variable area_km2 ya disponible, podemos construir un mapa donde el color represente el tamaño de los distritos. tmap se encarga de generar la escala de colores y la leyenda correspondiente.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa <- tm_shape(distritos_proj) +
+tm_polygons("area_km2",
+palette = "viridis",
+style = "quantile",
+n = 5,
+title = "Área (km²)") +
+tm_layout(title = "Distritos por tamaño (en cuantiles)",
+legend.outside = TRUE)
+
+```
+
+# Mapa temático continuo con tmap
+
+En este ejemplo utilizamos una paleta continua (viridis) y clasificamos los valores en cinco cuantiles, de modo que cada grupo contenga aproximadamente el mismo número de distritos.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa 
+
+```
+
+# Control del estilo de clasificación
+
+tmap permite cambiar el criterio de clasificación para adaptar el mapa al tipo de variable o al objetivo del análisis. Por ejemplo, podemos usar intervalos iguales en lugar de cuantiles
+
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa1 <- tm_shape(distritos_proj) +
+tm_polygons("area_km2",
+palette = "Blues",
+style = "equal",
+n = 5,
+title = "Área (km²)") +
+tm_layout(title = "Distritos por tamaño (intervalos iguales)",
+legend.outside = TRUE)
+```
+
+
+# Control del estilo de clasificación
+
+El estilo de clasificación influye en la percepción visual del mapa y puede resaltar zonas grandes o pequeñas según el corte seleccionado.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa1 
+```
+
+# Foco en una provincia específica
+
+Al igual que con sf y ggplot2, es posible filtrar la capa espacial antes de enviar los datos a tmap. Esto permite producir mapas centrados en una sola provincia o región.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+distritos_abancay <- distritos_proj %>%
+dplyr::filter(PROVINCIA == "ABANCAY")
+
+mapa2 <- tm_shape(distritos_abancay) +
+tm_polygons("area_km2",
+palette = "Greens",
+style = "quantile",
+title = "Área (km²)") +
+tm_layout(title = "Distritos de la provincia de Abancay")
+
+```
+
+# Foco en una provincia específica
+
+Un mapa de este tipo facilita la discusión detallada sobre un área de estudio concreta.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+
+mapa2 
+
+```
+
+# Adición de bordes y capas múltiples
+
+tmap permite superponer varias capas. Por ejemplo, se puede dibujar un mapa de distritos con un relleno suave y una capa adicional de fronteras más marcadas.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa3 <- tm_shape(distritos_proj) +
+tm_polygons(col = "grey95", border.col = "white") +
+tm_borders(col = "black", lwd = 0.5) +
+tm_layout(title = "Distritos con énfasis en fronteras")
+
+
+```
+
+# Adición de bordes y capas múltiples
+
+Esta combinación mejora la visibilidad de los límites sin recargar el mapa con demasiados colores.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa3 
+
+
+```
+
+# Centroides sobre el mapa
+
+Para ilustrar el concepto de centroide, puede ser útil mostrar puntos dentro de cada polígono. Esto se logra calculando los centroides con st_centroid() y añadiéndolos como una capa independiente en tmap.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+centroides <- st_centroid(distritos_proj)
+
+mapa4 <- tm_shape(distritos_proj) +
+tm_polygons(col = "grey90", border.col = "white") +
+tm_shape(centroides) +
+tm_symbols(col = "red", size = 0.1) +
+tm_layout(title = "Distritos y sus centroides")
+
+```
+
+# Centroides sobre el mapa
+
+Este tipo de mapa permite comprender mejor la relación entre la forma del polígono y su punto representativo.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa4 
+```
+
+# Resumen de la clase
+
+| Tema          | Herramienta de tmap                | Finalidad principal                                |
+|------------------------|------------------------------------|---------------------------------------------------|
+| Mapa base              | `tm_shape()` + `tm_polygons()`    | Visualizar la geometría de distritos              |
+| Mapa categórico        | `tm_polygons("PROVINCIA")`        | Colorear por unidades administrativas             |
+| Mapa continuo          | `tm_polygons("area_km2")`         | Representar el tamaño relativo de cada distrito   |
+| Clasificación de datos | `style = "quantile"`, `"equal"`   | Controlar cortes de la escala de colores          |
+| Filtro espacial        | `filter(PROVINCIA == ...)`        | Enfocar el mapa en un subconjunto territorial     |
+| Capas múltiples        | `tm_polygons()` + `tm_borders()`  | Separar relleno y fronteras para mejor lectura    |
+| Centroides             | `st_centroid()` + `tm_symbols()`  | Mostrar puntos representativos en cada polígono   |
+
+

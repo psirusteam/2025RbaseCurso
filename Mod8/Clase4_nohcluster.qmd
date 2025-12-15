@@ -1,0 +1,241 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 8"
+subtitle: "Clase 4: Non-Hierarchical Cluster"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+El análisis de clusters es una herramienta de aprendizaje no supervisado cuyo propósito es descubrir estructuras ocultas en los datos. A diferencia de los métodos de clasificación tradicionales, en clustering no existen categorías predefinidas: es el propio algoritmo el que identifica grupos de observaciones similares entre sí.
+
+Entre las diferentes familias de algoritmos, los métodos de clustering no jerárquico (Non-Hierarchical Cluster) son especialmente útiles cuando:
+
+- se trabaja con bases de datos medianas o grandes,
+
+- se requieren resultados rápidos y eficientes,
+
+- se desea obtener k grupos bien definidos,
+
+- se necesita flexibilidad en la reasignación de observaciones.
+
+En este módulo aprenderemos qué es el clustering no jerárquico, cómo funciona, qué supuestos requiere y cómo aplicarlo a datos reales.
+
+# ¿Qué es el Non-Hierarchical Cluster?
+
+El clustering no jerárquico es una familia de métodos de partición cuyo objetivo es dividir un conjunto de datos en k grupos previamente especificados, de manera que:
+
+- las observaciones dentro de un mismo grupo sean lo más similares posible, y
+
+- las observaciones entre distintos grupos sean lo más diferentes posible.
+
+A diferencia del clustering jerárquico, estos métodos no construyen una estructura en forma de árbol (dendrograma). En su lugar, parten de una asignación inicial de las observaciones a los k grupos y luego iteran reasignando cada elemento para mejorar una medida de calidad, típicamente minimizando la variación interna de cada grupo.
+
+# ¿Qué es el Non-Hierarchical Cluster?
+
+Entre sus características principales se destacan:
+
+- Requiere especificar k, el número de grupos deseados.
+
+- Iterativo: las observaciones pueden cambiar de grupo durante el proceso.
+
+- Eficiente: adecuado para bases de datos grandes.
+
+- Flexible: permite actualizar la solución ante nuevos datos.
+
+El algoritmo más conocido de esta familia es k-means, aunque existen otros como k-medoids (PAM) y métodos basados en optimización o distancia.
+
+# Diferencia entre Non-Hierarchical Cluster y k-means
+
+| Concepto                     | Qué es                                            | Alcance    | Ejemplos incluidos                                                                        |
+| ---------------------------- | ------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
+| **Non-Hierarchical Cluster** | Una **familia** de métodos                        | Amplio     | k-means, k-medoids (PAM), CLARA, algoritmos de partición, métodos basados en optimización |
+| **k-means**                  | Un **algoritmo particular dentro de esa familia** | Específico | Solo uno de los métodos posibles                                                          |
+
+# Considerciones generales antes de aplicar clustering
+
+Antes de aplicar cualquier algoritmo de la familia, conviene considerar:
+
+- Escala de las variables:
+Distancias como la euclidiana son sensibles a magnitudes distintas.
+
+- Tipo de variables:
+Algunos algoritmos requieren variables numéricas.
+
+- -Presencia de outliers:
+k-means es sensible; k-medoids es más robusto.
+
+- Cantidad de clusters k:
+Se debe decidir antes de ejecutar el algoritmo.
+
+# Algoritmo $k$-medoids (PAM)
+
+El algoritmo Partitioning Around Medoids (PAM), o $k$-medoids, es una alternativa robusta a $k$-means. A diferencia de $k$-means, que usa el centroide (media) como centro del cluster, $k$-medoids utiliza un punto de datos real, llamado medoide, como representante del grupo.
+
+
+El funcionamiento general es: 
+
+1. Seleccionar k observaciones como medoides iniciales.
+
+2. Asignar cada observación al medoide más cercano.
+
+3. Probar intercambios entre medoides y observaciones para mejorar la calidad.
+
+4. Repetir hasta que no mejore la solución.
+
+# Historia: El cantón que quería entender sus regiones
+
+Un equipo de estadística territorial en Suiza trabajaba con información socioeconómica de 47 provincias: tasa de fertilidad, nivel de educación, proporción de profesiones agrícolas, porcentaje de católicos y nivel de ejército.
+
+El ministro planteó la siguiente inquietud:
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos identificar tipos de regiones sin definir categorías de antemano, para orientar políticas sociales y educativas?”
+:::
+
+El equipo decidió aplicar clustering no jerárquico, usando k-medoids, debido a su robustez e interpretabilidad.
+
+# Base utilizada: swiss
+El conjunto swiss contiene:
+
+- 47 observaciones (provincias)
+
+- 5 variables numéricas: Fertility, Agriculture, Examination, Education, Catholic, Infant.Mortality
+
+```{r include=TRUE, echo=TRUE}
+head(swiss, 5)
+
+```
+
+# Estandarización de la base
+
+```{r include=TRUE, echo=TRUE}
+swiss_scaled <- scale(swiss)
+round(head(swiss_scaled, 5),3)
+```
+
+
+# Aplicación del método k-medoids (PAM)
+
+El equipo decidió explorar k = 3 clusters, suponiendo que podrían existir:
+
+- regiones más urbanizadas/educadas,
+
+- regiones más agrícolas,
+
+- regiones más tradicionales.
+
+Ejecutaron PAM:
+
+
+```{r include=TRUE, echo=TRUE}
+library(cluster)
+modelo_pam <- pam(swiss_scaled, k = 3)
+
+```
+\tiny
+```{r include=TRUE, echo=TRUE}
+
+modelo_pam$clustering
+```
+# ¿Qué encontraron los analistas?
+
+::: {.callout-note title="Interpretación"}
+Los clusters correspondían aproximadamente a:
+
+1. Regiones con mayor educación, menor fertilidad y menor agricultura
+
+2. Regiones agrícolas tradicionales con mayor fertilidad
+
+3. Regiones con alta influencia católica y variabilidad intermedia en educación
+:::
+
+Estos grupos surgieron de forma automática, sin categorías predefinidas.
+
+# Medoides: las provincias representativas
+
+```{r include=TRUE, echo=TRUE}
+round(modelo_pam$medoids,3)
+
+```
+
+Cada medoide corresponde a una provincia real, representando:
+
+- la región típica del cluster,
+
+- un ejemplo concreto para interpretar políticas,
+
+- un perfil observacional real y no un centroide abstracto.
+
+
+# Evaluación del clustering: silhouette
+
+Para evaluar la calidad del agrupamiento:
+
+```{r include=FALSE, echo=FALSE}
+library(dplyr)
+```
+
+```{r include=TRUE, echo=TRUE}
+
+head(silhouette(modelo_pam) %>% as.data.frame(),10)
+
+```
+
+# Evaluación del clustering: silhouette
+
+::: {.callout-tip title="Interpretación del silhouette"}
+
+Valores > 0.5 → clustering claro
+
+Valores cercanos a 0 → posible solapamiento
+
+Valores negativos → mala asignación
+
+El promedio silhouette para swiss mostró una separación adecuada, indicando buena estructura entre los grupos.
+:::
+
+# Moraleja de la historia
+
+El equipo suizo logró identificar tres tipos de regiones:
+
+- Provincias modernas con alta educación
+
+- Provincias agrícolas tradicionales
+
+- Provincias con fuerte componente religioso
+
+Sin usar etiquetas previas, k-medoids reveló patrones útiles para segmentar políticas públicas.
+
+# Resumen de la clase
+
+| Concepto                     | Definición                                                            |
+| ---------------------------- | --------------------------------------------------------------------- |
+| **Non-Hierarchical Cluster** | Métodos que dividen datos en *k* grupos mediante iteraciones.         |
+| **k-medoids (PAM)**          | Método robusto que usa observaciones reales como centros.             |
+| **Medoide**                  | Observación representativa del cluster.                               |
+| **Silhouette**               | Medida de calidad de la partición.                                    |
+

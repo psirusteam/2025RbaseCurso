@@ -1,0 +1,186 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 9"
+subtitle: "Clase 3: Mapas con sf"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En las clases anteriores trabajamos con la estructura de los datos espaciales y con operaciones básicas sobre polígonos. En esta Clase 3 el foco está en la construcción de mapas: cómo pasar de un objeto sf a una representación gráfica que permita comunicar información territorial.
+
+La idea es avanzar paso a paso desde un mapa muy simple hasta un mapa temático basado en una variable de la base.
+
+# Carga de la base espacial
+
+Comenzamos leyendo el shapefile de distritos. Este archivo ya concentra toda la información necesaria: geometría y atributos.
+
+\tiny
+```{r include=TRUE, echo=TRUE}
+library(sf)
+distritos <- st_read("../Data/shape/DISTRITOS.shp")
+```
+
+El objeto distritos contiene una fila por distrito y una columna de geometría que almacena los polígonos. Todas las demás columnas corresponden a atributos administrativos o descriptivos.
+
+# Primer mapa: geometría pura
+
+El mapa más simple posible dibuja únicamente la geometría, sin colores ni variables asociadas. Es un buen punto de partida para comprobar que el shape se cargó correctamente.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+plot(st_geometry(distritos),
+main = "Distritos: mapa base")
+```
+# Mapas con base en atributos
+
+Los objetos sf permiten seleccionar una columna como “variable de relleno” de forma sencilla. Para ello se puede usar plot() indicando la columna entre corchetes.
+
+Por ejemplo, si existe una variable de nombre PROVINCIA, podemos hacer
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+plot(distritos["PROVINCIA"],
+main = "Distritos coloreados por provincia")
+```
+
+# Mapas con ggplot2 y geom_sf
+
+El paquete ggplot2 se integra naturalmente con sf a través de geom_sf(). Esta combinación permite generar mapas más controlados en cuanto a títulos, temas y escalas.
+
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+library(ggplot2)
+mapa1 <- ggplot(distritos) +
+geom_sf(fill = "grey90", color = "white") +
+labs(title = "Mapa base de distritos") +
+theme_minimal()
+
+```
+# Mapas con ggplot2 y geom_sf
+
+E
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa1 
+```
+
+# Preparación de una variable continua
+
+Para construir un mapa temático continuo, podemos utilizar, por ejemplo, el área de cada distrito. Si aún no lo hemos hecho, calculamos primero el área en un sistema proyectado y luego lo incorporamos al objeto.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+# Transformar a un CRS proyectado (ejemplo UTM)
+
+distritos_proj <- st_transform(distritos, crs = 32719)
+
+# Calcular área en m2 y en km2
+
+distritos_proj$area_m2 <- st_area(distritos_proj)
+distritos_proj$area_km2 <- as.numeric(distritos_proj$area_m2) / 1e6
+
+
+```
+
+# Mapa temático continuo (área)
+
+Con ggplot2 y geom_sf() podemos colorear los distritos según el valor de area_km2
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+mapa2<- ggplot(distritos_proj) +
+geom_sf(aes(fill = area_km2), color = NA) +
+scale_fill_viridis_c(option = "C", name = "Área (km²)") +
+labs(title = "Distritos por área",
+subtitle = "Relleno proporcional al tamaño del distrito") +
+theme_minimal()
+```
+
+# Mapa temático continuo (área)
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+mapa2
+```
+
+# Subconjuntos y enfoque regional
+
+Otra forma de trabajar los mapas es centrarse en una sola provincia o región. Esto se logra filtrando el objeto sf antes de graficar.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+distritos_PuertoIn <- distritos_proj %>%
+dplyr :: filter(PROVINCIA == "PUERTO INCA")
+
+mapa3<-ggplot(distritos_PuertoIn) +
+geom_sf(fill = "lightblue", color = "white") +
+labs(title = "Distritos de la provincia de Puerto Inca") +
+theme_minimal()
+
+```
+
+# Subconjuntos y enfoque regional
+
+Otra forma de trabajar los mapas es centrarse en una sola provincia o región. Esto se logra filtrando el objeto sf antes de graficar.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+mapa3
+
+```
+
+# Mapa de centroides sobre polígonos
+
+Una combinación útil consiste en mostrar los polígonos y, sobre ellos, puntos que representen los centroides. Esto ayuda a entender la localización relativa dentro de cada distrito.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+centroides <- st_centroid(distritos_proj)
+
+mapa4 <- ggplot() +
+geom_sf(data = distritos_proj, fill = "grey95", color = "white") +
+geom_sf(data = centroides, color = "red", size = 1) +
+labs(title = "Distritos y sus centroides") +
+theme_minimal()
+
+```
+# Mapa de centroides sobre polígonos
+
+Una combinación útil consiste en mostrar los polígonos y, sobre ellos, puntos que representen los centroides. Esto ayuda a entender la localización relativa dentro de cada distrito.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+
+mapa4 
+
+```
+
+
+# Resumen de la clase 
+
+\small
+
+| Elemento del mapa          | Herramienta utilizada                  | Propósito principal                                  |
+|----------------------------|----------------------------------------|------------------------------------------------------|
+| Mapa base de geometría     | `plot(st_geometry(...))`              | Verificar la carga del shapefile                     |
+| Mapa categórico simple     | `plot(distritos["PROVINCIA"])`        | Distinguir unidades según un atributo cualitativo    |
+| Mapa continuo              | `geom_sf(aes(fill = area_km2))`       | Visualizar variación de una variable numérica        |
+| Cálculo de área            | `st_area()` + transformación de CRS   | Medir tamaño de los polígonos                        |
+| Subconjunto espacial       | `filter(PROVINCIA == ...)`            | Enfocar el mapa en una zona específica               |
+| Centroides                 | `st_centroid()` + `geom_sf()`         | Representar puntos centrales dentro de cada polígono |
+

@@ -1,0 +1,321 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 8"
+subtitle: "Clase 3: Análisis factorial"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+El Análisis Factorial (FA) es una técnica multivariada cuyo objetivo es:
+
+- Identificar factores latentes
+
+- Explicar las correlaciones entre un conjunto de variables numéricas
+
+Es especialmente útil cuando:
+
+- Varias variables parecen medir el mismo concepto
+
+- Existen correlaciones altas entre ellas
+
+- Queremos sintetizar la información con pocos factores
+
+::: {.callout-tip title="Idea principal"}
+El análisis factorial busca descubrir estructuras ocultas (factores) que explican por qué un conjunto de variables está correlacionado.
+:::
+
+# Diferencias con PCA
+
+| Tema           | PCA                        | Análisis Factorial                     |
+| -------------- | -------------------------- | -------------------------------------- |
+| Objetivo       | Resumir varianza total     | Explicar correlaciones                 |
+| Modelo         | No probabilístico          | Probabilístico                         |
+| Errores        | No modela error específico | Separa factor común y error único      |
+| Interpretación | Componentes                | Factores latentes                      |
+| Ideal para     | Reducción de dimensión     | Identificar constructos no observables |
+
+::: {.callout-note title="Regla práctica"}
+PCA explica la varianza.
+FA explica las correlaciones.
+:::
+
+# Modelo general del análisis factorial
+
+El modelo asume que:
+
+$$X = \Lambda F + \epsilon$$
+
+Donde:
+
+* $X$ = **variables observadas**
+* $\Lambda$ = matriz de **cargas factoriales**
+* $F$ = **factores comunes**
+* $\epsilon$ = **errores únicos**
+
+::: {.callout-tip title="Interpretación"}
+Cada variable se explica por:
+
+1. Un componente común (factores), y
+
+2. Un componente único o específico (error).
+:::
+
+# Factores comunes y únicos
+
+- Factores comunes
+Afectan simultáneamente a varias variables.
+
+- Factores únicos
+Variabilidad particular de cada variable no compartida con otras.
+
+# Hipótesis básicas
+
+- Las variables deben ser continuas.
+
+- Deben existir correlaciones significativas entre ellas.
+
+- Cada variable tiene una parte común y otra única.
+
+- Los factores están correlacionados o no, según el modelo.
+
+::: {.callout-warning}
+Si las variables no están correlacionadas → NO tiene sentido aplicar FA.
+:::
+
+# Historia: La psicóloga que quería entender el bienestar de los jóvenes
+
+Un equipo de psicometría de una organización internacional buscaba comprender mejor  
+**cómo se organizan los rasgos psicológicos de jóvenes en distintos países**.
+
+Durante meses diseñaron un cuestionario con **25 ítems tipo Likert (1 a 6)**  
+
+El objetivo era claro:
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos descubrir **factores latentes** que expliquen cómo se organizan estos 25 ítems  
+y así resumirlos en unas pocas dimensiones psicológicas?”
+:::
+
+
+# Historia: La psicóloga que quería entender el bienestar de los jóvenes
+
+Era un caso clásico de:
+
+- Muchas variables numéricas (ítems del cuestionario)
+- Correlacionadas entre sí
+- Donde sospechamos **pocos factores** detrás
+
+**Situación ideal para aplicar Análisis Factorial.**
+
+# Datos: Cuestionario de rasgos psicológicos (`bfi`)
+
+Para estudiar el problema, el equipo diseñó y aplicó una encuesta a un gran grupo de jóvenes.
+El cuestionario incluía 25 ítems tipo Likert (1 a 6) relacionados con rasgos psicológicos como responsabilidad, extraversión, neuroticismo, apertura y amabilidad.
+
+Después del trabajo de campo, los investigadores consolidaron una base de datos con más de 2.000 personas.
+En esta base:
+
+- Cada fila corresponde a un participante,
+
+- Cada columna (A1, A2, C1, C2, E1, E2, N1, N2, O1, O2, etc.) representa la respuesta a uno de los ítems del cuestionario.
+
+# Datos: Cuestionario de rasgos psicológicos (`bfi`)
+```{r include=TRUE, echo=TRUE}
+library(psych)
+# Cargar los datos
+data(bfi)
+
+# Filtramos únicamente las 25 variables del cuestionario
+items <- bfi[, 1:25]
+
+# Quitamos valores perdidos
+items <- na.omit(items)
+
+dim(items)
+```
+
+# Matriz de correlaciones
+
+Antes de aplicar FA, verificaron si existe estructura correlacional.
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+R <- cor(items)
+
+library(corrplot)
+
+corrplot(R, method = "color", type = "lower",tl.cex = 0.6, number.cex = 0.5)
+```
+
+
+
+
+# Matriz de correlaciones
+
+::: {.callout-note title="¿Qué observaron los analistas en el mapa de correlaciones?"}
+
+Los analistas identificaron un patrón general ordenado en la matriz de correlaciones: se apreciaban zonas de asociación moderada entre grupos de ítems y correlaciones bajas entre grupos distintos. El mapa no mostraba valores extremos ni problemas evidentes, pero sí una estructura suficientemente definida como para indicar la presencia de dimensiones comunes subyacentes.
+
+:::
+
+# Pruebas de adecuación para aplicar FA
+
+**Test de Bartlett**
+
+¿La matriz de correlaciones es distinta de la identidad?
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+bart <- cortest.bartlett(R, n = nrow(items))
+bart
+```
+
+# Pruebas de adecuación para aplicar FA
+
+::: {.callout-note title="¿Qué observaron los analistas en el test de Bartlett?"}
+
+Al examinar el test de Bartlett, los analistas notaron un estadístico chi-cuadrado muy elevado y un p-valor prácticamente cero. Esto indicó que la matriz de correlaciones era claramente distinta de la identidad y que existía suficiente estructura compartida entre los ítems como para justificar el uso de un análisis factorial.
+
+:::
+
+# Pruebas de adecuación para aplicar FA
+
+**KMO**
+¿Los ítems comparten varianza común suficiente?
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+kmo <- KMO(R)
+kmo
+```
+
+# Pruebas de adecuación para aplicar FA
+
+::: {.callout-note title="¿Qué observaron los analistas en el índice KMO?"}
+
+Los analistas notaron que el índice KMO general alcanzaba un valor alto y que la mayoría de los ítems presentaban medidas de adecuación muestral en rangos favorables. El patrón global sugería que los ítems compartían suficiente varianza común como para permitir la extracción de factores de manera estable.
+
+:::
+
+# ¿Cuántos factores extraer?
+
+\tiny
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+fa.parallel(items, fm = "ml", fa = "fa")
+```
+
+# Ajuste del modelo factorial
+
+\small
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+fa_bfi <- fa(items,
+nfactors = 6,
+fm       = "ml",
+rotate   = "oblimin")
+
+head(fa_bfi,5)
+
+```
+
+# Cargas factoriales
+
+
+\tiny
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+print(fa_bfi$loadings, cutoff = 0.3)
+```
+
+# Cargas factoriales
+
+::: {.callout-note title="¿Qué observaron los analistas en las cargas factoriales y la varianza?"}
+
+Los analistas advirtieron que la mayoría de los ítems se agrupaban claramente en cinco factores principales, cada uno explicando una proporción razonable de la varianza. Sin embargo, observaron que el sexto factor aportaba muy poco, con una varianza explicada marginal, lo que sugería que no añadía mucho valor adicional al modelo.
+
+:::
+
+# Ajuste del modelo factorial 2
+
+```{r include=TRUE, echo=FALSE,  fig.height=5, out.width='80%'}
+fa_bfi2 <- fa(items,
+nfactors = 5,
+fm       = "ml",
+rotate   = "oblimin")
+```
+
+\tiny
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
+print(fa_bfi2$loadings, cutoff = 0.3)
+```
+
+# Puntajes factoriales (dimensiones psicológicas por persona)
+
+\small
+```{r include=TRUE, echo=TRUE}
+fa5_scores <- fa(items,
+nfactors = 5,
+fm       = "ml",
+rotate   = "oblimin",
+scores   = "regression")
+
+head(fa5_scores$scores)
+
+```
+
+# Puntajes factoriales (dimensiones psicológicas por persona)
+
+\small
+
+::: {.callout-note title="Puntajes factoriales"}
+
+Una vez obtenidos los puntajes factoriales, el equipo contó con medidas numéricas que resumían cada una de las dimensiones latentes identificadas. Estos puntajes permitieron transformar las respuestas a los 25 ítems en indicadores compactos y comparables entre personas. Con ellos, el equipo pudo:
+
+- Construir índices psicológicos individuales.  
+- Analizar cómo estos rasgos se relacionaban con otros resultados.  
+- Identificar perfiles de personalidad.  
+- Clasificar grupos de jóvenes según patrones de rasgos.
+
+Los puntajes factoriales ofrecieron al equipo una forma clara y operativa de utilizar la información latente descubierta, convirtiéndola en variables listas para análisis posteriores.
+
+:::
+
+\small
+
+# Resumen de la Clase
+
+
+| Tema                        | Definición breve                                                | Herramienta / Concepto |
+|-----------------------------|-----------------------------------------------------------------|-------------------------|
+| **Objetivo del FA**         | Identificar factores latentes que explican correlaciones.       | Modelo factorial        |
+| **Modelo general**          | Variables = cargas × factores + error único.                    | $(X = \Lambda F + \epsilon$ |
+| **Factores comunes**        | Parte compartida entre variables.                               | Varianza común          |
+| **Factores únicos**         | Variabilidad específica de cada ítem.                           | Error único             |
+| **PCA vs FA**               | PCA resume varianza; FA explica correlaciones.                  | PCA ≠ FA                |
+| **Adecuación de datos**     | Evalúa si existe estructura correlacional suficiente.           | Bartlett, KMO           |
+| **Número de factores**      | Se determina según autovalores y análisis paralelo.             | Parallel analysis       |
+| **Cargas factoriales**      | Miden el aporte de cada ítem a cada factor.                     | `fa()`                  |
+| **Puntajes factoriales**    | Representan la posición de cada persona en cada dimensión.      | Scores = "regression"   |
+
+
+

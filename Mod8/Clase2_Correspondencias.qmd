@@ -1,0 +1,183 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 8"
+subtitle: "Clase 2: Análisis de Correspondencias"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+El Análisis de Correspondencias (CA) es una técnica diseñada para analizar relaciones entre variables categóricas, representando categorías en un espacio geométrico.
+
+::: {.callout-tip title="Idea Princial"}
+CA transforma una tabla de contingencia en un mapa donde las categorías se ubican como puntos.
+
+- Categorías cercanas → comportamientos similares
+
+- Categorías alejadas → perfiles contrastantes
+
+- Cerca del origen → poco informativas
+
+- Lejos del origen → discriminan bien
+:::
+
+# Diferencia entre PCA y CA
+
+| Técnica | Tipo de variables                    | Qué resume                  |
+| ------- | ------------------------------------ | --------------------------- |
+| PCA     | Numéricas                            | Varianza                    |
+| CA      | Categóricas (tablas de contingencia) | Asociación entre categorías |
+
+::: {.callout-note title="Regla práctica"}
+- **PCA** = maximiza varianza → requiere **variables numéricas**
+- **CA**  = maximiza inercia → requiere **variables categóricas**
+- En PCA analizamos covarianzas; en CA analizamos **frecuencias relativas**
+:::
+
+# Tipos de correspondencias
+
+- CA simple → Se utiliza cuando tenemos **dos variables categóricas** y queremos analizar cómo se relacionan entre sí. El insumo es una tabla de contingencia (filas × columnas), y el resultado es un mapa donde se representan las categorías de ambas variables.
+
+- CA múltiple (ACM) → Se usa cuando **hay más de dos variables categóricas simultáneamente**.
+En lugar de una sola tabla, se construye una matriz indicador (variables convertidas en dummies), que permite estudiar patrones globales de perfiles.
+
+# Historia: La encuesta sobre color de ojos y cabello
+
+En una encuesta escolar, el instituto de estadísticas sociales había preguntado a cientos de estudiantes por dos características simples:
+
+- el color de ojos
+
+- el color de cabello
+
+La institución ya contaba con una tabla resumen con el número de estudiantes en cada combinación “color de ojos × color de cabello”.
+
+# Historia: La encuesta sobre color de ojos y cabello
+
+Sin embargo, mirar solo la tabla no permitía ver con claridad los patrones:
+
+- ¿Qué combinaciones son más frecuentes?
+
+- ¿Qué colores de ojos se asocian más a ciertos colores de cabello?
+
+- ¿Hay grupos de categorías que se parezcan entre sí?
+
+En una reunión, una analista planteó la pregunta:
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos representar las categorías de ojos y cabello en un mapa, de forma que las asociaciones se vean de manera visual e intuitiva?”
+:::
+
+# Datos: tabla de ojos vs cabello
+
+Los analistas disponían de una tabla de contingencia que resumía el cruce:
+
+- Filas: color de cabello
+
+- Columnas: color de ojos
+
+En R, esta tabla viene en el objeto HairEyeColor.
+
+
+# Datos: tabla de ojos vs cabello
+
+```{r include=TRUE, echo=TRUE}
+library(tidyverse)
+tabla_ca <- margin.table(HairEyeColor, c(1, 2)) 
+
+tabla_ca
+
+
+```
+# Ajuste del Análisis de Correspondencias (CA)
+
+Los analistas tomaron su tabla de contingencia “cabello × ojos” y aplicaron CA simple para representar visualmente las asociaciones entre categorías.
+
+```{r include=TRUE, echo=TRUE}
+library(ca)
+
+modelo_ca <- ca(tabla_ca)
+```
+# Ajuste del Análisis de Correspondencias (CA)
+
+\tiny
+```{r include=TRUE, echo=TRUE}
+print(summary(modelo_ca), digits = 3)
+```
+# Ajuste del Análisis de Correspondencias (CA)
+
+::: {.callout-tip title="¿Qué nos dice el resumen del CA?"}
+
+- **La Dimensión 1 explica el 89.4%** de la asociación → es el eje dominante del mapa.  
+- **La Dimensión 2 agrega 9.5%**, llegando a **98.9%** de información representada con solo dos ejes.  
+- Las filas (colores de cabello) y las columnas (colores de ojos) muestran **altas contribuciones** a estas dos dimensiones, indicando patrones claros de asociación.
+
+**Conclusión:**  
+Con dos dimensiones podemos visualizar prácticamente toda la relación entre colores de ojos y cabello.
+
+:::
+
+# Biplot del CA
+
+```{r include=TRUE, echo=TRUE, fig.height=5, out.width='100%'}
+plot(modelo_ca)
+```
+# Biplot del CA
+
+::: {.callout-tip title="¿Qué revela el mapa de Correspondencias (CA)?"}
+
+- Cabello Blond y Ojos Blue aparecen juntos en el cuadrante derecho → fuerte asociación entre rasgos claros.
+
+- Cabello Black y Ojos Brown se ubican del lado izquierdo → combinación típica de rasgos oscuros.
+
+- Cabello Red se aleja del origen y se asocia más con Ojos Hazel / Green, indicando perfiles menos comunes.
+
+En resumen:
+El CA identifica dos ejes principales:
+
+- Dimensión 1: separa rasgos claros vs. rasgos oscuros.
+
+- Dimensión 2: distingue combinaciones atípicas como cabello rojo y ojos verdes/avellana.
+
+:::
+
+# Moraleja de la historia
+
+Al ver el mapa de correspondencias, los analistas confirmaron la respuesta a la pregunta inicial: sí existen patrones claros entre color de cabello y color de ojos.
+Las combinaciones frecuentes quedaron agrupadas (por ejemplo, rubio–azul), mientras que las menos comunes aparecieron más alejadas.
+En resumen, el CA permitió visualizar de forma simple relaciones que en la tabla original eran difíciles de ver.
+
+# Resumen de la clase
+
+| Tema                    | Idea principal                                                  | Herramienta / Función          |
+| ----------------------- | --------------------------------------------------------------- | ------------------------------ |
+| ¿Qué es CA?             | Técnica para analizar asociación entre categorías.              | `CA()` (FactoMineR)            |
+| Perfiles fila/columna   | Describen cómo se distribuye cada categoría.                    | `prop.table()`                 |
+| Inercia                 | Equivalente a la varianza en PCA; mide fuerza de asociación.    | `$eig`                         |
+| Dimensiones             | Ejes que resumen la relación entre categorías.                  | `fviz_ca_*()`                  |
+| CA simple               | Analiza dos variables categóricas.                              | `CA(tabla)`                    |
+| CA múltiple (ACM)       | Extiende CA a varias variables categóricas.                     | `MCA()`                        |
+| Interpretación del mapa | Categorías cercanas → perfiles similares; alejadas → distintos. | Mapas fila/columna/biplot      |
+| Contribuciones          | Indican qué categorías explican cada dimensión.                 |  |

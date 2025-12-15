@@ -1,0 +1,236 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 10"
+subtitle: "Clase 3: Presentaciones en PowerPoint, PDF y HTML"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción   
+
+En la Clase 1 mencionamos que el uso de Quarto es ideal para generar presentaciones.
+
+En esta clase aprenderemos a crear diapositivas de manera reproducible, generando tres formatos clave para presentaciones:
+
+- HTML (RevealJS - Interactivo y moderno)
+
+- PDF (Beamer - Formal y riguroso)
+
+- PowerPoint (Editable en PPT)
+
+# Repaso: El Archivo Fuente
+
+¿Qué archivo usar?
+
+Tanto R Markdown (.Rmd) como Quarto (.qmd) sirven para presentaciones.
+
+- R Markdown (.Rmd): Es el formato original. Funciona bien, pero requiere más configuración para formatos avanzados.
+
+- Quarto (.qmd): La evolución. Es la herramienta recomendada por Posit por su mayor flexibilidad y soporte para múltiples lenguajes (Python, Julia, etc.).
+
+**Usaremos la lógica de Quarto/R Markdown, donde cada ## es una diapositiva.**
+
+# Estructura Básica
+
+En R/Quarto, la división de diapositivas es simple:
+
+| Nivel | Cómo se escribe |
+|-------|-----------------|
+| H1    | \# Título       |
+| H2    | \## Subtítulo   |
+| H3    | \### Sección    |
+
+# Ejemplo básico
+
+``` yaml
+---
+title: "Mi Clase"
+format: revealjs # Define el formato de salida
+---
+
+## Introducción al tema
+El contenido va aquí.
+```
+# Chunks de Código
+
+El bloque de código R (Chunk) es donde generamos gráficos, tablas y análisis.
+
+``` yaml
+```{r analisis-clave, echo=FALSE, fig.cap="Gráfico de dispersión de variables X e Y"}
+# library(ggplot2)
+# ggplot(datos, aes(x, y)) + geom_point()
+```
+```
+
+
+# Formato 1: HTML
+
+::: {.callout-tip title="Ventajas claves"}
+
+- Interactivo: Permite insertar elementos dinámicos y gráficos en vivo.
+
+- Moderno: Temas y transiciones atractivas para un público general.
+
+- Compartible: Se visualiza en cualquier navegador (no requiere software).
+:::
+
+**Configuración YAML**
+
+``` yaml
+---
+format: 
+  revealjs:
+    theme: default
+    slide-number: true # Muestra el número de diapositiva
+---
+```
+
+# HTML: Personalización
+
+**Truco: Fondos e Imágenes**
+
+Puedes definir una imagen de fondo para una diapositiva específica o toda la presentación.
+
+| Opción | Colocación |
+| :--- | :--- |
+| **Fondo Global** | En el YAML (`background-image: "ruta/img.png"`). |
+| **Fondo Local** | Dentro de la diapositiva, después del título (`{.slide-bg-img="ruta/img.png"}`). |
+
+**Diapositivas Verticales**
+
+RevealJS permite navegar hacia abajo (vertical) además de horizontalmente.
+
+- Usa encabezados de Nivel 3 (###) para las diapositivas verticales.
+
+# HTML: Contenido Interactivo
+
+Dado que el formato final es web, podemos incluir código que genera salidas dinámicas.
+
+- Gráficos Interactivos: Permiten zoom, tooltips (etiquetas al pasar el mouse) y selección de datos.
+
+``` yaml
+---
+# Genera un gráfico interactivo
+library(plotly)
+plot_ly(iris, x = ~Sepal.Length)
+---
+```
+- Tablas Interactivas: El paquete `DT` permite mostrar tablas grandes con búsqueda, filtros y paginación, perfectas para presentaciones web.
+
+# Formato 2: PDF (Beamer)
+
+
+::: {.callout-tip title="Ventajas claves"}
+
+- **Rigor:** El estándar de facto para presentaciones científicas y técnicas.
+- **Diseño Fijo:** El aspecto es idéntico en cualquier dispositivo o impresión.
+- **Soporte LaTeX:** Ideal para fórmulas matemáticas y símbolos complejos.
+:::
+
+**Configuración YAML**
+
+``` yaml
+---
+format: 
+  beamer:
+    theme: Madrid
+    colortheme: dove # Opciones de color
+---
+```
+
+# PDF: Requisito Obligatorio
+
+**¡Necesitas LaTeX!**
+
+Para generar PDF, R Markdown/Quarto necesitan compilar el código fuente a través de un motor LaTeX.
+
+- Instalación: Se recomienda TinyTeX por ser ligero y fácil de instalar desde R.
+
+``` yaml
+install.packages("tinytex") 
+tinytex::install_tinytex()
+
+```
+
+# PDF: Opciones Clave de Configuración 
+
+\small
+
+| Opción YAML / Chunk | Formato Aplicable | ¿Qué hace? |
+| :--- | :--- | :--- |
+| `latex_engine: xelatex` | Ambos | Define el motor de LaTeX; recomendado para soporte de tildes y caracteres especiales. |
+| `fig_caption: true` | Documento PDF | Numera y agrega títulos automáticos a las figuras (Ej: "Figura 1: Gráfico de dispersión"). |
+| `fig.align='center'` | Chunk | Centra los gráficos generados por R en la página. |
+| `fig.cap="Mi título"` | Chunk | Agrega un pie de figura/título personalizado a un gráfico específico. |
+| `bibliography: "bib.bib"` | Ambos | Permite generar citas y bibliografía automáticas (requiere un archivo .bib). |
+
+# PDF: Énfasis y Flujo
+
+**Bloques de Información**
+
+Se usan para resaltar una conclusión, un ejemplo o una advertencia.
+
+* Sintaxis Quarto: `::: {.callout-note}` o `::: {.callout-example}`
+
+# Formato 3: Presentaciones PowerPoint (PPTX)
+
+| Formato | Característica "Más Chevere" | Truco o Implementación Clave |
+| :--- | :--- | :--- |
+| **PowerPoint (PPTX)** | **Fácil Edición para Todos** | Genera un archivo `.pptx` que el público puede modificar después de la presentación. |
+| | **Estilos Corporativos Rápidos** | Usa el `reference-doc` para aplicar logos y plantillas de tu institución. |
+
+# PPTX: Estilos y Plantillas
+
+**La Clave: `reference-doc`**
+
+La principal ventaja es usar una plantilla maestra de PowerPoint para que tus resultados hereden los estilos corporativos (logos, fuentes, fondos).
+
+1.  Crea la plantilla PPT (`.pptx`) con los diseños deseados.
+2.  Indícala en el YAML:
+
+```yaml
+format:
+  pptx:
+    reference-doc: "mi_plantilla.pptx"
+```
+
+# PPTX: Gráficos y Tablas
+
+Los gráficos y tablas generados por R se insertan en el PPTX como objetos fácilmente editables por cualquier persona con PowerPoint.
+
+::: {.callout-tip title="Cierre de la historia"}
+Controla el tamaño con fig.width y fig.height en el chunk para que se ajusten bien a la diapositiva.
+:::
+
+- Para tablas complejas, considera usar el paquete flextable para mantener la capacidad de edición en el .pptx generado.
+
+# ¿Cuál Formato Elegir?
+
+| Formato | Público/Uso Ideal | Control/Edición | Requisito Extra |
+| :--- | :--- | :--- | :--- |
+| **HTML** | Clases, *webinars*, público amplio. | Interactivo, no editable. | Navegador web. |
+| **PDF** | Informes técnicos, publicaciones, rigurosidad. | Fijo, no editable. | LaTeX (TinyTeX). |
+| **PowerPoint** | Reuniones internas, entregables para revisión. | Editable (el más flexible). | Plantilla PPTX. |
+

@@ -1,0 +1,264 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 6"
+subtitle: "Clase 5: Regresión logística"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En clases anteriores trabajamos con modelos lineales para predecir el ingreso, una
+variable continua.
+
+Hoy aprenderemos un modelo para cuando la variable respuesta no es numérica, sino binaria,
+como:
+
+-   pobre / no pobre
+
+-   tiene empleo / no tiene
+
+-   accede a internet / no accede
+
+Ese modelo es la regresión logística.
+
+::: {.callout-tip title="Idea principal"}
+La regresión logística modela la probabilidad de que ocurra un evento.
+:::
+
+# ¿Cuándo usar regresión logística?
+
+| Tipo de variable Y     | Modelo adecuado         |
+|------------------------|-------------------------|
+| Continua               | Regresión lineal        |
+| Binaria (0/1)          | **Regresión logística** |
+| Categórica multinomial | Regresión multinomial   |
+
+::: {.callout-warning title="Muy importante"}
+No se puede usar regresión lineal cuando Y es binaria: predice fuera de 0–1 y viola
+supuestos.
+:::
+
+# ¿Qué modela la logística?
+
+No modelamos directamente $(P(Y = 1))$, sino el **logit**:
+
+$$
+\text{logit}(p) = \log\left( \frac{p}{1-p} \right)
+$$
+
+El modelo toma la forma:
+
+$$
+\text{logit}(P(Y = 1)) = \beta_0 + \beta_1 X_1 + \ldots + \beta_k X_k
+$$ 
+
+Y la probabilidad se recupera como:
+
+$$
+p = \frac{e^\eta}{1 + e^\eta}
+\qquad\text{donde}\qquad
+\eta = \beta_0 + \beta_1 X_1 + \ldots + \beta_k X_k
+$$ 
+
+# Historia: El banco que quería anticipar el incumplimiento
+
+Un banco estaba preocupado porque algunos clientes dejaban de pagar su tarjeta de crédito.
+
+Querían dejar de reaccionar tarde y empezar a **anticipar**:
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos predecir si un cliente va a incumplir el pago de su tarjeta?”
+:::
+
+Disponían de información como:
+
+- **`balance`**: saldo promedio en la tarjeta.
+- **`income`**: ingreso anual del cliente.
+- **`student`**: si es estudiante o no.
+- **`default`**: si dejó de pagar (Yes/No).
+
+Aquí la variable de interés es **binaria** → justo el caso para regresión logística.
+
+# Datos: clientes de tarjeta de crédito
+
+Usaremos la base `Default` del paquete `ISLR`, que simula datos de clientes de tarjetas de crédito.
+
+```{r include=TRUE, echo=TRUE}
+library(ISLR)
+library(tidyverse)
+
+datos <- Default %>% 
+  as_tibble() %>% mutate(
+    default_bin = if_else(default == "Yes", 1, 0)
+  )
+head(datos, 5)
+```
+
+# Modelo logístico: variables del banco
+
+::: {.callout-note title="Variables del modelo"}
+
+Y (respuesta): default_bin → 1 si el cliente incumple, 0 si paga.
+
+X1: balance → saldo en la tarjeta (cuanto más debe).
+
+X2: income → ingreso anual.
+
+X3: student → estudiante / no estudiante.
+:::
+
+La regresión logística modela:
+
+$$logit(P(\text{default} = 1)) = \beta_0 + \beta_1 \cdot \text{balance} + \beta_2 \cdot \text{income} + \beta_3 \cdot \text{student}$$
+
+# Ajuste del modelo logístico
+
+\footnotesize
+```{r include=TRUE, echo=TRUE}
+
+mod_log <- glm(default_bin ~ balance + income + student,data = datos,
+               family = binomial(link = "logit")
+)
+
+summary(mod_log)
+
+
+```
+# ¿Qué nos dicen los coeficientes?
+
+::: {.callout-tip title="Lectura de los coeficientes"}
+
+- Balance tiene un coeficiente positivo y grande →
+cuanto mayor es el saldo de la tarjeta, mayor es la probabilidad de incumplimiento, manteniendo constantes el ingreso y la condición de estudiante.
+Es el predictor más influyente del modelo.
+
+- Income tiene un coeficiente muy pequeño y no significativo →
+una vez que controlamos por el saldo, el ingreso ya no aporta información adicional sobre el riesgo de default.
+
+- Student (Yes) tiene un coeficiente negativo y significativo →
+ajustando por balance e ingreso, los estudiantes tienen menor probabilidad de incumplir que los no estudiantes.
+:::
+
+# Odds ratios
+
+Cuando los analistas obtuvieron los coeficientes del modelo, todavía les costaba interpretarlos intuitivamente.
+Entonces aplicaron una transformación clave: exp(), que convierte los coeficientes logit en odds ratios.
+
+Así obtuvieron:
+
+```{r include=TRUE, echo=TRUE}
+
+odds <- exp(coef(mod_log))
+odds
+```
+# Odds ratios
+
+::: {.callout-tip title="Lectura de los odds ratios"}
+
+- Balance (OR = 1.0057)
+Por cada dólar adicional de saldo en la tarjeta, los odds de incumplir aumentan en 0.57%.
+**Es decir, el riesgo sube ligeramente con cada dólar… pero como los saldos pueden ser miles de dólares, su efecto acumulado es enorme**
+
+
+- Income (OR ≈ 1)
+El ingreso prácticamente no cambia los odds de incumplimiento.
+**Ajustando por el saldo real, ganar más o menos no altera significativamente el riesgo.**
+
+
+- StudentYes (OR = 0.52)
+Ser estudiante reduce los odds de default aproximadamente a la mitad respecto a no serlo.
+**Ajustando por saldo e ingreso, los estudiantes incumplen menos, incluso si su balance es similar.**
+:::
+
+# Predicción de probabilidades
+
+El banco quiere probabilidades, no solo coeficientes:
+
+```{r include=TRUE, echo=TRUE}
+datos$prob_default <- predict(mod_log, type = "response")
+datos %>% 
+  mutate(prob_default = predict(mod_log, type = "response")) %>% 
+  dplyr::select(default_bin, balance, prob_default) %>% 
+  arrange(desc(default_bin)) %>% 
+  head(5)
+
+```
+
+# De probabilidades a clasificación (0/1)
+
+Para tomar decisiones (por ejemplo, aprobar o no una tarjeta), el banco necesita clasificar:
+
+```{r include=TRUE, echo=TRUE}
+cutoff <- 0.5
+datos$pred_clase <- if_else(datos$prob_default > cutoff, 1, 0)
+
+table(Real = datos$default_bin, Predicho = datos$pred_clase)
+
+```
+
+# De probabilidades a clasificación (0/1)
+
+::: {.callout-tip title="Interpretación rápida de la matriz de confusión"}
+
+- Verdaderos negativos (0→0): clientes que no incumplen y el modelo lo predice bien.
+
+- Verdaderos positivos (1→1): clientes que sí incumplen y son bien identificados.
+
+- Falsos positivos (0→1): el modelo “desconfía de más”, marca riesgo donde no lo hay.
+
+- Falsos negativos (1→0): los más peligrosos: el modelo dice “tranquilo” pero el cliente incumple.
+:::
+
+# Exactitud (accuracy)
+
+```{r include=TRUE, echo=TRUE}
+accuracy <- mean(datos$default_bin == datos$pred_clase)
+accuracy
+```
+::: {.callout-note title="Exactitud (accuracy)"}
+La exactitud es la proporción de clientes correctamente clasificados:
+
+$$\text{Accuracy} = \frac{\text{Aciertos}}{\text{Total de Casos}}$$
+
+
+En problemas de riesgo (como crédito), además de la exactitud suele interesar:
+
+- la tasa de falsos negativos (incumplimientos no detectados)
+
+- y la tasa de falsos positivos (clientes buenos que el modelo “castiga”).
+:::
+# Resumen de la clase
+
+
+| Tema                | Idea esencial                                                               |
+| ------------------- | --------------------------------------------------------------------------- |
+| Regresión logística | Modelo para variables respuesta binarias (0/1).                             |
+| Logit               | Se modela el logaritmo de las odds, no la probabilidad directamente.        |
+| Coeficientes        | Cada β indica el cambio en el log-odds al variar una covariable.            |
+| Odds ratio          | `exp(β)` indica cuánto se multiplican las odds al aumentar una unidad en X. |
+| Predicción          | El modelo entrega probabilidades entre 0 y 1.                               |
+| Clasificación       | Requiere elegir un umbral (cutoff) para pasar de probabilidad a 0/1.        |
+| Evaluación          | Matriz de confusión, exactitud y tipos de error (FP, FN).                   |

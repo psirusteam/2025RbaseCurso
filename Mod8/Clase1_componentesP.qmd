@@ -1,0 +1,264 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 8"
+subtitle: "Clase 1: Componentes principales"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En esta clase veremos Componentes Principales (PCA), una técnica para reducir la dimensionalidad de un conjunto de variables correlacionadas.
+
+Es útil cuando tenemos muchas variables numéricas que contienen información redundante.
+
+::: {.callout-tip title="Idea principal"}
+PCA identifica nuevas variables (componentes) que resumen la mayor parte de la varianza en los datos.
+:::
+
+# ¿Por qué necesitamos reducir dimensionalidad?
+
+- Muchas variables → análisis difícil.
+
+- Variables correlacionadas → información duplicada.
+
+- Modelos más complejos → mayor riesgo de sobreajuste.
+
+::: {.callout-tip title="PCA ayuda a…"}
+
+- Simplificar
+
+- Visualizar
+
+- Encontrar patrones
+
+- Crear índices o factores sintéticos
+:::
+
+# Varianza y correlación
+
+PCA se basa en dos conceptos:
+
+- Varianza: cantidad de información de una variable.
+
+- Correlación: mide si las variables se mueven juntas.
+
+Cuando existe alta correlación, PCA puede resumir la información en pocos componentes.
+
+# Historia: El ministerio que quería resumir demasiados indicadores
+
+El Ministerio de Seguridad gestionaba más de 20 indicadores distintos para evaluar la situación de cada región:
+tasas de arrestos, violencia, robos, asaltos, armas, etc.
+
+Los analistas estaban abrumados: muchas variables estaban altamente correlacionadas, y entender patrones generales era cada vez más complicado.
+
+El director planteó entonces una pregunta:
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos resumir todos estos indicadores en unos pocos factores que capturen la mayor parte de la información?”
+:::
+
+# Historia: El ministerio que quería resumir demasiados indicadores
+
+El equipo de estadística propuso usar Componentes Principales (PCA), una técnica diseñada precisamente para:
+
+- reducir dimensionalidad,
+
+- eliminar redundancia,
+
+- y revelar patrones globales en los datos.
+
+# ¿Qué hace matemáticamente PCA?
+
+Dado un conjunto de variables centradas en cero:
+
+$$
+X = \{x_1, x_2, \dots, x_p\}
+$$
+PCA encuentra vectores $w_1, w_2, \dots, w_p$ tales que:
+
+$$
+    \text{PC}_1 = w_1^{\top} X \quad \text{maximiza varianza}
+$$
+bajo la restricción:
+
+$$
+    \|w_1\| = 1
+$$
+El segundo componente:
+
+$$
+    \text{PC}_2 = w_2^{\top} X
+$$
+maximiza varianza bajo la condición de ser **ortogonal** a $\text{PC}_1$.
+
+# Datos: indicadores del conjunto USArrests
+
+
+```{r include=TRUE, echo=TRUE}
+
+library(tidyverse)
+
+datos_pca <- USArrests %>%
+as_tibble()
+
+head(datos_pca, 5)
+
+```
+
+# ¿Qué dijeron los analistas al ver esta base?
+
+::: {.callout-note title="Observaciones iniciales"}
+
+- Las variables están en escalas completamente distintas
+(por ejemplo, Assault tiene valores mucho más grandes que UrbanPop).
+
+- Variables como Murder y Assault parecen estar relacionadas.
+
+- Para que PCA funcione correctamente, hay que evitar que una variable “domine” por su escala.
+
+Los analistas concluyeron que debían estandarizar las variables antes de calcular PCA.
+
+:::
+
+
+# Estandarización de la base
+
+```{r include=TRUE, echo=TRUE}
+
+datos_scaled <- scale(datos_pca)
+head(datos_scaled, 5)
+
+```
+
+# Ajuste del PCA 
+
+```{r include=TRUE, echo=TRUE}
+pca_model <- prcomp(datos_scaled, center = TRUE, scale. = TRUE)
+
+summary(pca_model)
+
+```
+# Interpretación del PCA según el resumen
+
+::: {.callout-tip title="¿Qué descubrieron los analistas al revisar el summary?"}
+
+- PC1 explica el 62% de la variabilidad total.
+Esto significa que un solo componente resume más de la mitad de toda la información contenida en las cuatro variables originales.
+
+- PC2 agrega un 24.7% adicional.
+Con PC1 + PC2, ya se alcanza 86.7% de la varianza acumulada.
+Para los analistas, esto fue una señal clara de que dos componentes eran suficientes para representar casi toda la estructura de los datos.
+
+- PC3 y PC4 contribuyen muy poco (8.9% y 4.3%).
+Su aportación es marginal y no justificaría incluirlos en un análisis interpretativo o visual.
+
+Conclusión operativa:
+El equipo podía trabajar con solo dos dimensiones sin perder casi nada de información, simplificando enormemente el análisis posterior.
+
+:::
+
+# Scree Plot (gráfico de codo)
+
+```{r include=TRUE, echo=TRUE, fig.height=5, out.width='100%'}
+plot(pca_model, type = "l", main = "Scree Plot")
+```
+
+# Scree Plot (gráfico de codo)
+
+::: {.callout-note title="¿Qué muestra el Scree Plot?"}
+
+- PC1 y PC2 concentran la mayor parte de la información.
+
+- A partir de PC3, la varianza adicional es pequeña.
+
+- El “codo” del gráfico aparece después del segundo componente → señal de que 2 componentes son suficientes.
+
+:::
+
+# Loadings (pesos de cada variable)
+
+```{r include=TRUE, echo=TRUE, fig.height=7, out.width='100%'}
+pca_model$rotation
+
+```
+
+# Loadings (pesos de cada variable)
+
+::: {.callout-tip title="Interpretación de los loadings"}
+
+- **En PC1**, Murder, Assault y Rape tienen cargas grandes y de signo similar.  
+  Esto indica que el componente resume un **nivel general de violencia**, donde todas las tasas de delitos se mueven juntas.
+
+- **En PC2**, la variable con mayor carga es UrbanPop (0.87), mientras que las tasas de delitos aportan menos.  
+  Este componente representa principalmente **el grado de urbanización** de cada región.
+
+En conjunto, los analistas concluyeron que:
+
+- **PC1 ≈ Violencia / Criminalidad general**  
+- **PC2 ≈ Urbanización**
+
+:::
+
+# Biplot del PCA
+
+```{r include=TRUE, echo=TRUE, fig.height=7, out.width='80%'}
+biplot(pca_model, scale = 0)
+```
+
+# Biplot del PCA
+
+::: {.callout-tip title="Interpretación biplot"}
+
+- **Murder, Assault y Rape** apuntan en la misma dirección → representan un **eje común de violencia**.
+- **UrbanPop** apunta hacia otra dirección → capta **urbanización**, casi independiente de la violencia.
+- Estados hacia la **derecha (PC1 alto)**: mayor criminalidad.
+- Estados hacia **arriba (PC2 alto)**: mayor urbanización.
+
+En resumen:  
+**PC1 = violencia general**  
+**PC2 = urbanización**
+:::
+
+# Moraleja de la historia
+
+Al final, los analistas vieron que PC1 reunía toda la información relacionada con los delitos violentos; las variables Murder, Assault y Rape se movían juntas y el componente actuaba como un resumen del nivel de violencia en cada estado.
+Por otro lado, PC2 agrupaba principalmente la información de UrbanPop, reflejando diferencias en urbanización.
+
+En síntesis:
+- PC1 = violencia
+- PC2 = urbanización
+
+Con solo estos dos componentes lograron capturar casi toda la información relevante.
+
+# Resumen de la clase
+
+| Concepto                 | Definición breve                                                                        | 
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| **PCA**                  | Técnica que reduce dimensionalidad creando nuevas variables que concentran la varianza. | 
+| **Componente Principal** | Combinación lineal que captura la mayor varianza posible.                               |
+| **Varianza explicada**   | Proporción de información retenida por cada componente.                                 | 
+| **Loadings (cargas)**    | Aporte de cada variable a cada componente.                                              | 
+| **Biplot**               | Gráfico que muestra componentes, variables y observaciones simultáneamente.             |

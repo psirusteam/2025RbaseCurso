@@ -1,0 +1,215 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 9"
+subtitle: "Clase 1: Introducción - Shape y polígonoss"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+En ciencia de datos aplicada a temas territoriales, es común trabajar con:
+
+  - Mapas de países, regiones, comunas, manzanas, etc.
+  
+  - Información socioeconómica asociada a unidades geográficas.
+  
+En R, este tipo de información se maneja mediante **objetos espaciales**
+  
+
+# ¿Qué es un dato espacial?
+
+Información que describe fenómenos con localización geográfica.
+
+Representa:
+
+  - Ubicaciones (puntos)
+  
+  - Conexiones (líneas)
+  
+  - Áreas (polígonos)
+  
+Se usa para entender patrones espaciales, desigualdades y dinámicas territoriales.
+
+# Tipos de datos espaciales
+
+- **Puntos:** ubican objetos específicos.  
+- **Líneas:** describen trayectorias o redes.  
+- **Polígonos:** representan áreas continuas y cerradas.
+
+::: {.callout-important title="Los polígonos son esenciales"}
+Los **polígonos** son el tipo de dato espacial más usado para estadísticas territoriales porque permiten representar unidades administrativas completas.
+:::
+# ¿Qué es un shapefile?
+
+- Formato estándar de datos espaciales vectoriales.
+- Diseñado para almacenar geometría y atributos asociados.
+- Muy utilizado en sistemas de información geográfica (SIG).
+
+::: {.callout-note title="Un shapefile es un conjunto de archivos"}
+Un shapefile **NO es un solo archivo**, sino varios componentes que trabajan juntos.
+:::
+
+# Archivos que componen un shapefile
+
+- `.shp` → geometría  
+- `.shx` → índice  
+- `.dbf` → atributos  
+- `.prj` → proyección  
+- Otros opcionales (`.cpg`, `.sbn`, `.sbx`)
+
+Si alguno de los archivos principales falta, el shapefile puede no funcionar correctamente.
+
+
+# ¿Qué es un Polígono?
+
+Los polígonos representan áreas cerradas como:
+
+- Regiones  
+- Provincias  
+- Comunas  
+- Zonas censales  
+
+::: {.callout-important title="Concepto fundamental"}
+Un polígono combina **coordenadas** + **identificadores** + **atributos estadísticos**.
+:::
+
+# Tipos de polígonos
+
+- Polígono simple: un solo contorno cerrado.
+
+- Polígono con hoyos: incluye áreas internas excluidas (lagos, parques).
+
+- Multipolígono: varios polígonos que comparten atributos (por ejemplo, una región con varias islas).
+
+En estadística territorial:
+
+- Una misma unidad administrativa puede estar formada por varias “piezas” espaciales.
+
+- El análisis reconoce todas esas partes como una sola entidad.
+
+
+# Geometría y atributos
+
+En un shapefile (y en R), cada unidad geográfica tiene:
+
+- una geometría (polígono, línea o punto),
+
+- una fila en una tabla de atributos (nombre, código, población, indicadores, etc.).
+
+Esta separación permite:
+
+- Mantener la representación espacial y los datos estadísticos coordinados.
+
+- Unir o cruzar datos de distintas fuentes sobre la misma geometría.
+
+# Sistemas de referencia espacial
+
+Para ubicar correctamente los datos en el espacio se necesita un sistema de referencia:
+
+- Coordenadas geográficas: latitud y longitud (grados).
+
+- Coordenadas proyectadas: metros o kilómetros en un plano.
+
+La elección del CRS afecta:
+
+- La interpretación de distancias y áreas.
+
+- La capacidad de superponer capas espaciales correctamente.
+
+# Polígonos: de coordenadas a SpatialPolygons
+
+Primero definimos las coordenadas de cada polígono:
+
+\small
+```{r include=TRUE, echo=TRUE}
+library(sp)
+Sr1 <- Polygon(cbind(c(2, 4, 4, 1, 2),
+c(2, 3, 5, 4, 2)))
+
+Sr2 <- Polygon(cbind(c(5, 4, 2, 5),
+c(2, 3, 2, 2)))
+
+Sr3 <- Polygon(cbind(c(4, 4, 5, 10, 4),
+c(5, 3, 2, 5, 5)))
+
+```
+# Polígonos: de coordenadas a SpatialPolygons
+
+Primero definimos las coordenadas de cada polígono:
+
+\small
+```{r include=TRUE, echo=TRUE}
+
+
+# Polígono interior (hoyo)
+
+Sr4 <- Polygon(cbind(c(5, 6, 6, 5, 5),
+c(4, 4, 3, 3, 4)),
+hole = TRUE)
+
+Sr1@coords
+```
+# De Polygon a SpatialPolygons
+
+Agrupamos en objetos Polygons y luego en SpatialPolygons:
+
+\tiny
+```{r include=TRUE, echo=TRUE}
+Srs1 <- Polygons(list(Sr1),     "s1")
+Srs2 <- Polygons(list(Sr2),     "s2")
+Srs3 <- Polygons(list(Sr3,Sr4), "s3/s4")
+
+SpP <- SpatialPolygons(list(Srs1, Srs2, Srs3), 1:3)
+
+
+```
+\tiny
+```{r include=TRUE, echo=TRUE}
+SpP
+
+```
+# De Polygon a SpatialPolygons
+
+Agrupamos en objetos Polygons y luego en SpatialPolygons:
+
+\footnotesize
+```{r include=TRUE, echo=TRUE}
+plot(SpP, col = 1:3, main = "Polígonos espaciales")
+
+```
+
+# Resumen de la clase
+
+| Tema                                     | Concepto central                                                             | Importancia principal                                     |
+| ---------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Dato espacial                            | Información con ubicación geográfica                                         | Permite estudiar fenómenos territoriales                  |
+| Tipos vectoriales                        | Puntos, líneas y polígonos                                                   | Representan objetos, redes y áreas                        |
+| Shapefile                                | Formato vectorial con varios archivos (`.shp`, `.dbf`, `.shx`, `.prj`, etc.) | Estándar clásico en SIG y estadísticas oficiales          |
+| Polígono                                 | Área cerrada que representa una unidad territorial                           | Base de la mayoría de análisis territoriales              |
+| Objetos `sp` (puntos, líneas, polígonos) | Clases para manejar geometrías y atributos en R                              | Permiten construir y explorar datos espaciales desde cero |
+
+
+

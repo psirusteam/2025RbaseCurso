@@ -1,0 +1,280 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 7"
+subtitle: "Clase 2: Gradient Boosting Machines (GBM)"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción 
+
+
+Los Gradient Boosting Machines (GBM) son una familia de modelos que combinan muchos árboles pequeños (débiles) para producir un modelo fuerte y altamente predictivo.
+Son uno de los métodos más poderosos en machine learning estructurado.
+
+**¿Por qué funcionan tan bien?**
+
+- Cada árbol intenta corregir los errores del árbol anterior.
+
+- Se ajustan de manera secuencial (boosting).
+
+- Utilizan gradiente descendente para mejorar paso a paso.
+
+- Permiten controlar el sobreajuste mediante learning rate y profundidad.
+
+
+# ¿Qué es el Boosting?
+
+::: {.callout-tip title="Idea principal"}
+Boosting construye el modelo agregando árboles pequeños, donde cada árbol corrige los errores del modelo anterior.
+:::
+
+Proceso simplificado:
+
+- Empieza con un modelo base (por ejemplo, un valor promedio).
+
+- Ajusta un árbol pequeño a los residuos del modelo anterior.
+
+- Actualiza la predicción del modelo:
+Modelo ← Modelo anterior + (learning rate × árbol nuevo).
+
+- Repite 100–1000 veces.
+
+**Resultado:**
+Un modelo fuerte que combina muchos modelos débiles.
+
+# Componentes importantes
+
+| Componente        | Función                                              |
+| ----------------- | ---------------------------------------------------- |
+| **Learning rate** | Qué tanto aprende cada árbol (0.01–0.1 recomendado). |
+| **n.trees**       | Número de árboles (100–3000).                        |
+| **Depth**         | Profundidad de cada árbol (1–6).                     |
+| **Loss function** | Define el error: MSE, Log-loss, MAE                  |
+| **Subsampling**   | Reduce sobreajuste y mejora estabilidad.             |
+
+# Random Forest vs GBM
+
+| Aspecto                    | **Random Forest**                    | **GBM**                                |
+| -------------------------- | ------------------------------------ | -------------------------------------- |
+| **Forma de entrenamiento** | Muchos árboles **en paralelo**       | Árboles **en secuencia**               |
+| **Objetivo principal**     | Reducir **varianza**                 | Reducir **sesgo**                      |
+| **Construcción**           | Bootstrap + submuestreo de variables | Ajuste a **residuos** del árbol previo |
+| **Riesgo de sobreajuste**  | Bajo                                 | Alto si no se ajusta learning rate     |
+| **Hiperparámetros clave**  | `ntree`, `mtry`                      | `learning_rate`, `n.trees`, `depth`    |
+| **Ventaja clave**          | Robusto, poco tuning                 | Altísima precisión                     |
+
+
+# Historia: El ingeniero que quería predecir el consumo de combustible
+
+Un centro de investigación automotriz buscaba desarrollar vehículos más eficientes. Tenían acceso a registros detallados de varios modelos de autos: características del motor, peso, cilindros, caballos de fuerza y desempeño general.
+
+El jefe del laboratorio planteó la pregunta clave:
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos predecir el consumo de combustible de un auto usando sus características mecánicas?”
+:::
+
+# Historia: El ingeniero que quería predecir el consumo de combustible
+
+La variable objetivo era:
+
+- mpg → millas por galón (consumo de combustible, variable cuantitativa)
+
+Y contaban con predictores como:
+
+- hp → caballos de fuerza
+- wt → peso del vehículo
+- cyl → número de cilindros
+
+Este es un caso ideal para un **GBM de regresión**, donde Y es continua.
+
+# Datos: autos del conjunto mtcars
+
+```{r include=TRUE, echo=TRUE}
+
+library(tidyverse)
+
+datos_gbm <- mtcars %>%
+  as_tibble() 
+
+head(datos_gbm, 5)
+
+```
+
+# Ajuste de un GBM de regresión
+
+```{r include=TRUE, echo=TRUE}
+
+library(gbm)
+
+set.seed(123)
+
+modelo_gbm <- gbm(
+  formula = mpg ~ hp + wt + cyl,
+  data = datos_gbm,
+  distribution = "gaussian",   # REGRESIÓN
+  n.trees = 1500,
+  interaction.depth = 3,
+  shrinkage = 0.01,
+  n.minobsinnode = 5
+)
+```
+
+# Ajuste de un GBM de regresión
+
+```{r include=TRUE, echo=TRUE,  fig.height=3, out.width='100%'}
+
+summary(modelo_gbm)
+```
+
+# Ajuste de un GBM de regresión
+
+::: {.callout-tip title="¿Qué encontró el jefe al revisar el summary del GBM?"}
+
+Al revisar el `summary(modelo_gbm)`, el jefe del laboratorio entendió **qué variables estaban impulsando realmente las predicciones del consumo**.  
+Descubrió que:
+
+- **hp (caballos de fuerza)** era la variable más influyente: motores más potentes tienden a consumir más combustible.  
+- **wt (peso del auto)** aportaba casi la misma importancia que `hp`, mostrando que los vehículos más pesados requieren mayor energía para moverse.  
+- **cyl (cilindros)** también influía, aunque en menor medida, pues parte de su efecto ya se reflejaba en la potencia y el peso.
+:::
+
+# Evaluación del modelo GBM
+
+Saber qué variables eran importantes no era suficiente.  
+El jefe del laboratorio quería responder una pregunta muy concreta:
+
+**“¿Qué tan cerca están las predicciones del GBM del consumo real (`mpg`) de cada auto?”**
+
+Para ello decidió calcular las **predicciones del modelo** y medir el **error** entre lo predicho y lo observado.
+
+# Predicciones del modelo sobre los mismos datos
+
+```{r include=TRUE, echo=TRUE}
+
+datos_gbm <- datos_gbm %>%
+mutate(
+mpg_pred = predict(modelo_gbm, n.trees = 1500)
+)
+
+datos_gbm %>%
+dplyr::select(mpg, mpg_pred) %>%
+head(5)
+
+```
+# Predicciones del modelo sobre los mismos datos
+
+::: {.callout-note}
+
+Cada fila muestra el **consumo real (`mpg`)** y el **consumo predicho (`mpg_pred`)** por el GBM.  
+Si el modelo fuera perfecto, estos dos valores serían casi iguales para todos los autos.
+:::
+
+# Gráfico: consumo real vs consumo predicho
+
+```{r include=TRUE, echo=FALSE,  fig.height=5, out.width='100%'}
+
+library(ggplot2)
+
+graf1 <- ggplot(datos_gbm, aes(x = mpg, y = mpg_pred)) +
+geom_point() +
+geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+labs(
+x = "Consumo real (mpg)",
+y = "Consumo predicho por el GBM",
+title = "Consumo real vs. predicho"
+)
+
+graf1
+
+```
+El jefe observó que la mayoría de puntos se ubicaban cerca de la diagonal, por lo que concluyó que el GBM **capturaba bien el patrón de consumo** en función del peso, los caballos de fuerza y los cilindros.
+
+# Métricas de error: RMSE y MAE
+
+```{r include=TRUE, echo=TRUE}
+rmse <- sqrt(mean((datos_gbm$mpg - datos_gbm$mpg_pred)^2))
+mae <- mean(abs(datos_gbm$mpg - datos_gbm$mpg_pred))
+
+c(RMSE = rmse, MAE = mae)
+```
+
+# Métricas de error: RMSE y MAE
+
+::: {.callout-tip title="Interpretación de las métricas de error"}
+
+- **RMSE (Root Mean Squared Error)**  
+  Es el error cuadrático medio en la misma escala de `mpg`.  
+  Indica, en promedio, cuánto se equivoca el modelo en términos de *millas por galón* cuando predice el consumo.
+
+- **MAE (Mean Absolute Error)**  
+  Mide el error absoluto promedio.  
+  Es más fácil de interpretar:  
+  “En promedio, el modelo se equivoca aproximadamente MAE millas por galón.”
+
+Cuanto **más pequeños** sean RMSE y MAE, **mejor está ajustando** el GBM al consumo real.
+
+:::
+
+#  ¿Qué pasaría si la variable Y fuera categórica?
+
+::: {.callout-note title="GBM para clasificación"}
+
+Si Y no fuera continua (como `mpg`) sino **categórica** —por ejemplo, *bajo consumo / alto consumo*—  
+el modelo tendría que cambiar a un **GBM de clasificación**.
+
+**¿Qué cambiaría?**
+
+- En `gbm()`, usaríamos  
+  - `distribution = "bernoulli"` para 0/1  
+  - `distribution = "multinomial"` para más clases  
+- Las predicciones ya no serían valores numéricos, sino **probabilidades por clase**.  
+- La interpretación pasaría de *“predice X mpg”* a  
+  *“predice que este auto tiene un 82% de probabilidad de ser de alto consumo”.*
+:::
+
+# Ventajas y desventajas de GBM
+
+| Ventajas                                | Desventajas                           |
+| --------------------------------------- | ------------------------------------- |
+| Muy alta precisión                      | Puede ser lento                       |
+| Se adapta bien a no-linealidades        | Muchos hiperparámetros                |
+| Excelente para variables tabulares      | Fácil de sobreajustar si no se regula |
+| Maneja bien interacción entre variables | Menos interpretable que un solo árbol |
+
+
+# Resumen de la Clase
+
+| Tema                          | Qué aprendimos                                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Boosting**                  | Combina muchos árboles pequeños para corregirse entre sí y formar un modelo fuerte.                                             |
+| **GBM de regresión**          | Usa *distribution = "gaussian"* y minimiza MSE para predecir valores continuos.                                                 |
+| **Ejemplo práctico**          | Predecimos `mpg` usando `hp`, `wt`, `cyl` del conjunto *mtcars*.                                                                |
+| **Importancia de variables**  | `hp` y `wt` resultaron ser los predictores más influyentes; `cyl` aportó menos.                                                 |
+| **Evaluación del modelo**     | Calculamos predicciones, RMSE, MAE y un gráfico real vs. predicho.                                                              |
+| **¿Y si Y fuera categórica?** | Cambiaríamos a *distribution = "bernoulli"* o *"multinomial"*, y el modelo predeciría **probabilidades**, no valores numéricos. |

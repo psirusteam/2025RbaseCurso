@@ -1,0 +1,261 @@
+---
+title: "Fundamentos de ciencia de datos con R - Módulo 7"
+subtitle: "Clase 4: Ramdom forest"
+author: "CEPAL - Unidad de Estadísticas Sociales"
+date: "`r Sys.Date()`"
+format: 
+  beamer: 
+    # theme: "CambridgeUS"
+    colortheme: dove
+    fonttheme: professionalfonts
+    # incremental: true
+    aspectratio: 1610
+    #theme: Berkeley
+    toc: false
+    mermaid: true  
+    slide_level: 2
+    #highlight: pygments
+Email: andres.gutierrez@cepal.org
+lang: es
+execute-dir: project
+editor_options:
+  markdown:
+    wrap: 90
+---
+
+```{r setup, include=FALSE}
+# Configuración inicial: No mostrar mensajes ni warnings
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(printr)
+```
+
+# Introducción
+
+Los Random Forest son una extensión poderosa de los árboles de decisión.
+En lugar de entrenar un solo árbol, Random Forest construye muchos árboles, cada uno ligeramente diferente, y luego combina sus predicciones.
+
+
+::: {.callout-tip title="Idea principal"}
+Random Forest disminuye el sobreajuste de los árboles individuales al promediar muchos modelos diferentes.
+:::
+
+# ¿Qué es Random Forest?
+
+Un Random Forest es un modelo que combina múltiples árboles de decisión, cada uno entrenado sobre una muestra diferente de los datos y usando subconjuntos aleatorios de variables.
+La predicción final es una agregación de todas las predicciones individuales.
+
+# Construcción de cada árbol
+
+Cada árbol $T_b$ se entrena con una muestra bootstrap del conjunto de datos:
+
+$$
+D_b \sim \text{Bootstrap}(D)
+$$
+
+En cada nodo, el árbol elige el mejor split solo entre un subconjunto aleatorio de variables 
+$m:$
+
+$$
+m \subseteq \{X_1, X_2, \dots, X_p\}, \quad |m| = \text{mtry}
+$$
+
+Esto introduce diversidad entre árboles, reduciendo la correlación entre ellos.
+
+# Predicción del Random Forest
+
+**Para regresión (caso continuo):**
+
+La predicción final es el **promedio** de los árboles:
+
+$$
+\hat{y} = \frac{1}{B} \sum_{b=1}^{B} T_b(x)
+$$
+
+**Para clasificación:**
+
+El Random Forest usa votación mayoritaria:
+
+$$
+\hat{y} = \text{mode} \{T_1(x), T_2(x), \dots, T_B(x)\}
+$$
+
+# Error OOB (Out-of-Bag)
+
+Cada observación no aparece en ~36% de los bootstraps.
+Esas observaciones sirven como “test interno”:
+
+$$
+\text{OOB Error} = \frac{1}{n} \sum_{i=1}^{n} L(y_i, \hat{y}_{i, \text{OOB}})
+$$
+
+* Donde **$n$** es el número total de observaciones en el conjunto de datos.
+* **$L$** es la función de pérdida (por ejemplo, el error cuadrático medio para regresión o la tasa de clasificación errónea para clasificación).
+* $\hat{y}_{i, \text{OOB}}$ es la predicción para la observación $i$, obtenida promediando (o votando) **solo** los árboles que no usaron la observación $i$ en su entrenamiento (es decir, aquellos donde $i$ estaba *Out-Of-Bag*).
+
+# Importancia de variables
+
+La importancia de una variable $X_j$ se mide por el **Incremento en el Error Cuadrático Medio** ($\text{IncMSE}_j$) después de permutar sus valores en los datos Out-Of-Bag (OOB).
+
+$$
+\text{IncMSE}_j = \frac{1}{B} \sum_{b=1}^{B} (\text{MSE}_{b, j}^{\text{perm}} - \text{MSE}_b)
+$$
+
+::: {.callout-note title="En resumen"}
+**Random Forest = bootstrap + submuestreo de variables + muchos árboles + agregación.**  
+Este enfoque reduce la **varianza**, mejora la **estabilidad** del modelo y evita el **sobreajuste** característico de un solo árbol.
+:::
+
+# Historia: La oficina de calidad del aire que quería anticipar el nivel de ozono
+
+La Oficina de Calidad del Aire enfrentaba un desafío creciente: los niveles de ozono ambiental variaban abruptamente de un día a otro.
+El director necesitaba una herramienta capaz de anticipar estos niveles para emitir alertas tempranas.
+
+Los modelos lineales que usaban hasta ahora no lograban capturar la complejidad del fenómeno.
+
+El director de monitoreo planteó la pregunta clave:
+
+::: {.callout-warning title="Pregunta problema"}
+“¿Podemos usar muchos árboles de decisión para predecir el ozono de manera más estable?”
+:::
+
+# Historia: La oficina de calidad del aire que quería anticipar el nivel de ozono
+
+El equipo decidió probar Random Forest, un método que combina muchos árboles de decisión, cada uno entrenado con una versión ligeramente distinta de los datos.
+
+La idea es simple pero poderosa:
+
+- Cada árbol aprende una parte del patrón.
+- Todos los árboles juntos producen una predicción estable y robusta.
+
+# Datos: mediciones ambientales del conjunto airquality
+
+La oficina contaba con mediciones meteorológicas diarias:
+
+- Ozone: concentración de ozono (lo que queremos predecir)
+- Solar.R: radiación solar
+- Wind: velocidad del viento
+- Temp: temperatura
+
+El equipo cargó los datos históricos de Nueva York para entrenar el modelo.
+
+# Datos: mediciones ambientales del conjunto airquality
+
+```{r include=TRUE, echo=TRUE}
+library(tidyverse)
+datos_rf <- airquality %>%
+  drop_na() %>%      
+  as_tibble()
+
+head(datos_rf, 5)
+```
+
+# Ajuste del modelo Random Forest
+
+```{r include=TRUE, echo=TRUE}
+library(randomForest)
+
+set.seed(123)
+
+modelo_rf <- randomForest(
+  Ozone ~ Solar.R + Wind + Temp,
+  data = datos_rf,
+  ntree = 500,
+  mtry = 2,
+  importance = TRUE
+)
+```
+
+# Importancia de variables
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='100%'}
+varImpPlot(modelo_rf)
+```
+# Importancia de variables
+
+::: {.callout-tip title="Lo que descubrió el director con el gráfico"}
+
+- Temperatura (Temp) fue, por lejos, la variable más influyente.
+Esto confirmó un patrón conocido: los días más cálidos tienden a presentar mayores concentraciones de ozono.
+
+- Viento (Wind) ocupó el segundo lugar en importancia.
+Su influencia negativa tenía sentido: el viento dispersa los contaminantes, reduciendo la concentración de ozono en el aire.
+
+- Radiación solar (Solar.R) también contribuyó, pero en menor medida.
+Aun así, el director entendió que la formación de ozono depende de procesos fotoquímicos, por lo que su inclusión era coherente.
+:::
+
+# Predicción de ozono
+
+```{r include=TRUE, echo=TRUE}
+datos_rf <- datos_rf %>%
+  mutate(Ozone_pred = predict(modelo_rf))
+
+head(datos_rf %>% dplyr :: select(Ozone, Ozone_pred), 5)
+```
+
+# Predicción de ozono
+
+::: {.callout-note title="¿Qué vio el director al comparar Ozone y Ozone_pred?"}
+
+Al mirar la tabla, el director notó que las predicciones del Random Forest  
+(**`Ozone_pred`**) no coinciden exactamente con los valores reales de ozono (**`Ozone`**),  
+pero **sí están razonablemente cerca**.
+
+Eso es justamente lo que esperamos de un buen modelo de regresión:
+
+- si fueran iguales número por número → sospecharíamos de sobreajuste;  
+- si fueran totalmente diferentes → el modelo no estaría aprendiendo nada.
+
+Aquí las diferencias son moderadas: el bosque no es perfecto, pero **captura bien la tendencia general** de los niveles de ozono.
+:::
+
+# Evaluación del modelo
+
+```{r include=TRUE, echo=TRUE}
+rmse_rf <- sqrt(mean((datos_rf$Ozone - datos_rf$Ozone_pred)^2))
+mae_rf  <- mean(abs(datos_rf$Ozone - datos_rf$Ozone_pred))
+
+c(RMSE = rmse_rf, MAE = mae_rf)
+
+```
+::: {.callout-tip}
+
+- RMSE: cuántas unidades de ozono se equivoca en promedio.
+
+- MAE: error absoluto promedio.
+:::
+
+# Gráfico final: Real vs Predicho
+
+```{r include=TRUE, echo=FALSE,  fig.height=5, out.width='100%'}
+ggplot(datos_rf, aes(x = Ozone, y = Ozone_pred)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  labs(
+    x = "Ozone real",
+    y = "Ozone predicho",
+    title = "Random Forest: Real vs. Predicho"
+  )
+```
+
+# Gráfico final: Real vs Predicho
+
+::: {.callout-tip title="Interpretación visual"}
+
+Cuando los puntos se acercan a la diagonal, significa que el modelo predice bien.
+El director vio que la mayoría de puntos caía cerca de la línea →
+Random Forest estaba listo para usarse en la práctica.
+:::
+
+# Resumen de la clase
+
+| Concepto                     | Descripción técnica                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Random Forest**            | Ensamble de múltiples árboles entrenados con *bootstrap* + selección aleatoria de variables (*mtry*).           |
+| **Bootstrap**                | Cada árbol se entrena sobre una muestra con reemplazo del conjunto original. Reduce correlación entre árboles.  |
+| **Submuestreo de variables** | En cada split, solo un subconjunto de variables es evaluado → aumenta diversidad entre árboles.                 |
+| **Predicción**               | Regresión: $\hat{y} = \frac{1}{B}\sum_{b=1}^B T_b(x)$. Clasificación: votación mayoritaria.               |
+| **Error OOB**                | Estimación interna del error: cada observación es predicha por árboles donde **no** fue usada en entrenamiento. |
+| **Importancia de variables** | Basada en aumento del MSE por permutación (%IncMSE) o reducción de impureza (IncNodePurity).                    |
+| **Ventajas**                 | No lineal, robusto al sobreajuste, escala bien, maneja interacciones complejas.                                 |
+| **Desventajas**              | Menor interpretabilidad que un árbol simple, mayor costo computacional.                                         |
