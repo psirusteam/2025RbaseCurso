@@ -149,3 +149,13 @@ Para este ejemplo se tomará New Directory
 Al crear un proyecto en RStudio, todas las rutinas y archivos quedan anclados a la carpeta
 del proyecto, evitando errores de ruta y facilitando la organización, la reproducibilidad
 y el trabajo colaborativo.
+
+# Resumen de a clase
+
+| **Tema**             | **Conceptos clave**                                                   | **Resultado esperado**                                |
+| -------------------- | --------------------------------------------------------------------- | ----------------------------------------------------- |
+| R                    | Lenguaje de programación para análisis estadístico y ciencia de datos | Capacidad de ejecutar análisis y modelos estadísticos |
+| RStudio              | Entorno de desarrollo integrado (IDE) para R                          | Trabajo más organizado, visual e intuitivo            |
+| Instalación          | Descarga desde CRAN y Posit                                           | Entorno funcional listo para análisis                 |
+| Proyectos en RStudio | Carpeta estructurada con scripts, datos y resultados                  | Organización y reproducibilidad del trabajo           |
+| Buenas prácticas     | Uso de rutas relativas y proyectos                                    | Menos errores y mayor facilidad para compartir        |

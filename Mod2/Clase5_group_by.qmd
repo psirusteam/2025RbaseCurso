@@ -264,7 +264,7 @@ datos %>%
 ```
 
 
-# Observación 
+# Resumen de la clase 
 
 | Función       | Propósito                          | Ejemplo                           |
 | ------------- | ---------------------------------- | --------------------------------- |

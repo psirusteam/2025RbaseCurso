@@ -149,6 +149,17 @@ datos_rf <- airquality %>%
 head(datos_rf, 5)
 ```
 
+# Separación en entrenamiento y prueba
+
+```{r include=TRUE, echo=TRUE}
+set.seed(123)
+n <- nrow(datos_rf)
+id_train <- sample(seq_len(n), size = 0.7 * n)
+
+datos_train <- datos_rf[id_train, ]
+datos_test  <- datos_rf[-id_train, ]
+```
+
 # Ajuste del modelo Random Forest
 
 ```{r include=TRUE, echo=TRUE}
@@ -158,7 +169,7 @@ set.seed(123)
 
 modelo_rf <- randomForest(
   Ozone ~ Solar.R + Wind + Temp,
-  data = datos_rf,
+  data = datos_train,
   ntree = 500,
   mtry = 2,
   importance = TRUE
@@ -187,10 +198,10 @@ Aun así, el director entendió que la formación de ozono depende de procesos f
 # Predicción de ozono
 
 ```{r include=TRUE, echo=TRUE}
-datos_rf <- datos_rf %>%
-  mutate(Ozone_pred = predict(modelo_rf))
+datos_test <- datos_test %>%
+  mutate(Ozone_pred = predict(modelo_rf, newdata = datos_test))
 
-head(datos_rf %>% dplyr :: select(Ozone, Ozone_pred), 5)
+head(datos_test %>% dplyr :: select(Ozone, Ozone_pred), 5)
 ```
 
 # Predicción de ozono
@@ -212,8 +223,8 @@ Aquí las diferencias son moderadas: el bosque no es perfecto, pero **captura bi
 # Evaluación del modelo
 
 ```{r include=TRUE, echo=TRUE}
-rmse_rf <- sqrt(mean((datos_rf$Ozone - datos_rf$Ozone_pred)^2))
-mae_rf  <- mean(abs(datos_rf$Ozone - datos_rf$Ozone_pred))
+rmse_rf <- sqrt(mean((datos_test$Ozone - datos_test$Ozone_pred)^2))
+mae_rf  <- mean(abs(datos_test$Ozone - datos_test$Ozone_pred))
 
 c(RMSE = rmse_rf, MAE = mae_rf)
 
@@ -228,13 +239,13 @@ c(RMSE = rmse_rf, MAE = mae_rf)
 # Gráfico final: Real vs Predicho
 
 ```{r include=TRUE, echo=FALSE,  fig.height=5, out.width='100%'}
-ggplot(datos_rf, aes(x = Ozone, y = Ozone_pred)) +
+ggplot(datos_test, aes(x = Ozone, y = Ozone_pred)) +
   geom_point() +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   labs(
-    x = "Ozone real",
+    x = "Ozone real (prueba)",
     y = "Ozone predicho",
-    title = "Random Forest: Real vs. Predicho"
+    title = "Random Forest: Real vs. Predicho (conjunto de prueba)"
   )
 ```
 

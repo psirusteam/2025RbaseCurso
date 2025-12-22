@@ -170,3 +170,17 @@ ylab = "Ingreso (COP)")
 :::{.callout-note}
 Los gráficos ayudan a detectar valores atípicos y patrones de distribución.
 :::
+
+
+# Resumen de la clase
+
+| **Tema**                  | **Conceptos clave**                                            | **Resultado esperado**                             |
+| ------------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
+| Descripción de datos      | Exploración inicial antes del análisis                         | Comprensión general de la información              |
+| Tipos de datos en R       | `numeric`, `integer`, `character`, `logical`, `factor`, `Date` | Identificación correcta del tipo de variable       |
+| Estructura de datos       | Uso de `str()`                                                 | Reconocimiento de clases y formatos                |
+| Resumen estadístico       | `summary()`                                                    | Visión global de variables numéricas y categóricas |
+| Estadísticos descriptivos | Media, mediana, varianza, desviación estándar, rango           | Medición de tendencia central y dispersión         |
+| Tablas de frecuencia      | `table()`, `prop.table()`                                      | Análisis de variables cualitativas                 |
+| Visualización básica      | Histogramas y boxplots                                         | Detección de patrones y valores atípicos           |
+

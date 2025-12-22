@@ -203,3 +203,15 @@ mi_lista <- list(
 
 mi_lista
 ```
+
+
+# Resumen de la clase
+
+| **Tema**             | **Conceptos clave**                                            | **Resultado esperado**                      |
+| -------------------- | -------------------------------------------------------------- | ------------------------------------------- |
+| Librerías en R       | `install.packages()` y `library()`                             | Uso correcto de funciones externas          |
+| tidyverse            | Conjunto integrado de paquetes (dplyr, ggplot2, readr, tibble) | Flujo de trabajo más eficiente y legible    |
+| Importación de datos | Lectura de archivos CSV, Excel, RDS, SPSS, Stata, JSON         | Datos disponibles como objetos en R         |
+| Formatos de archivo  | Uso de `readr`, `readxl`, `haven`, `jsonlite`, `data.table`    | Capacidad de trabajar con múltiples fuentes |
+| Objetos en R         | Vector, factor, matriz, data frame, tibble, lista              | Comprensión de la estructura de los datos   |
+| Data frame vs Tibble | Tibble como versión moderna y ordenada                         | Manejo más seguro y claro de tablas         |

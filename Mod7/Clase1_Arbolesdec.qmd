@@ -135,6 +135,17 @@ as_tibble()
 head(datos_clas, 5)
 ```
 
+# Separación en entrenamiento y prueba
+
+```{r include=TRUE, echo=TRUE}
+set.seed(123)
+n <- nrow(datos_clas)
+id_train <- sample(seq_len(n), size = 0.7 * n)
+
+datos_train <- datos_clas[id_train, ]
+datos_test  <- datos_clas[-id_train, ]
+```
+
 # Modelo de árbol de clasificación
 
 ::: {.callout-note title="Variables del modelo"}
@@ -163,7 +174,7 @@ set.seed(123)
 
 arbol_clas <- rpart(
 Species ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width,
-data   = datos_clas,
+data   = datos_train,
 method = "class"
 )
 
@@ -177,24 +188,24 @@ rpart.plot(arbol_clas,type = 2, extra = 104,fallen.leaves = TRUE)
 
 # Visualización del árbol
 
+
 ::: {.callout-tip title="¿Qué evidenció el jefe al correr el modelo?"}
 
 Al generar el árbol, el jefe notó tres patrones inmediatos:
 
-1. **Pétalos cortos → setosa**  
-   El primer corte fue `Petal.Length < 2.5`, creando un nodo completamente puro de *setosa*.  
-   La especie se distingue casi automáticamente.
+- **Pétalos cortos → setosa**  
+  Con `Petal.Length < 2.5` el nodo es completamente puro (100% setosa).
 
-2. **Pétalos largos pero angostos → versicolor**  
-   Entre las flores con pétalos más largos, el modelo separó por `Petal.Width < 1.8`,  
-   revelando que las versicolor tienen pétalos más delgados.
+- **Pétalos largos y angostos → versicolor**  
+  Si `Petal.Width < 1.8`, la mayoría de las flores son *versicolor*.
 
-3. **Pétalos largos y anchos → virginica**  
-   Cuando ambos atributos son grandes, el árbol clasifica con alta precisión como *virginica*.
+- **Pétalos largos y anchos → virginica**  
+  Cuando `Petal.Width ≥ 1.8`, casi todas se clasifican como *virginica* (≈97%).
 
 El jefe concluyó que **dos preguntas eran suficientes** para identificar la especie de cualquier flor.
 
 :::
+
 
 # Predicción y matriz de confusión
 
@@ -206,15 +217,16 @@ Por eso pidió calcular las **predicciones** del árbol y evaluar su desempeño 
 ```{r include=TRUE, echo=TRUE}
 # Predicciones del árbol
 
-datos_clas$pred_arbol <- predict(arbol_clas, type = "class")
+datos_test$pred_arbol <- predict(arbol_clas,newdata = datos_test,type = "class"
+)
+
 
 # Matriz de confusión
 
 tab_conf <- table(
-Real     = datos_clas$Species,
-Predicho = datos_clas$pred_arbol
+  Real     = datos_test$Species,
+  Predicho = datos_test$pred_arbol
 )
-
 
 
 ```
@@ -246,7 +258,8 @@ Pero quiso una medida **resumida y directa** que respondiera a la pregunta clave
 Para eso calculó la **exactitud (accuracy)**, la proporción total de flores correctamente clasificadas por el modelo.
 
 ```{r include=TRUE, echo=TRUE}
-accuracy_arbol <- mean(datos_clas$Species == datos_clas$pred_arbol)
+accuracy_arbol <- mean(datos_test$Species == datos_test$pred_arbol
+)
 
 ```
 # Exactitud (accuracy) del árbol

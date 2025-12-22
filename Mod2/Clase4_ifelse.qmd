@@ -217,3 +217,13 @@ head(datos_multi, 5)
 * `case_when()` permite **clasificar múltiples casos**.
 * Ambas se integran con `mutate()` y `across()` para construir variables analíticas limpias y reproducibles.
 
+# Resumen de la clase
+
+
+| **Concepto**             | **Idea clave**                            |
+| ------------------------ | ----------------------------------------- |
+| Programación condicional | Crear variables según condiciones lógicas |
+| `if_else()`              | Dos resultados posibles                   |
+| `case_when()`            | Múltiples condiciones                     |
+| Integración tidyverse    | Uso con `mutate()` y `%>%`                |
+

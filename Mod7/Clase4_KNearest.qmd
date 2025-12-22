@@ -300,7 +300,7 @@ pred_knn <- knn.reg(
   train = x_train_s,
   test  = x_test_s,
   y    = y_train,
-  k     = 5
+  k     = 9
 )
 
 ingreso_pred <- pred_knn$pred
@@ -337,7 +337,7 @@ pred_knn_pob <- knn(
   train = x_train_s,
   test  = x_test_s,
   cl    = y_train_p,
-  k     = 5
+  k     = 9
 )
 
 

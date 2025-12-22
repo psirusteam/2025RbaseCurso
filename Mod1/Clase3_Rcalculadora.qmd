@@ -142,3 +142,15 @@ resultado
 | Uso de coma `,` en lugar de punto `.` para decimales | Diferencia cultural                     | `3,14`             |
 
 R detiene la ejecución y muestra un mensaje de error que ayuda a identificar el problema.
+
+
+# Resumen de la clase
+
+| **Tema**                  | **Conceptos clave**                              | **Resultado esperado**                        |
+| ------------------------- | ------------------------------------------------ | --------------------------------------------- |
+| R como lenguaje numérico  | R permite cálculos simples y complejos           | Uso de R como calculadora científica          |
+| Operaciones básicas       | Suma, resta, multiplicación, división, potencias | Ejecución correcta de expresiones matemáticas |
+| Orden de operaciones      | Paréntesis → Potencias → * / → + -               | Interpretación correcta de resultados         |
+| Funciones matemáticas     | `sqrt()`, `abs()`, `round()`, `log()`, `exp()`   | Aplicación de funciones integradas            |
+| Funciones trigonométricas | `sin()`, `cos()`, `tan()` (en radianes)          | Cálculo de funciones angulares                |
+| Asignación de valores     | Operador `<-` para crear objetos                 | Almacenamiento y reutilización de resultados  |

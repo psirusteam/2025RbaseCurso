@@ -32,146 +32,127 @@ library(printr)
 
 # Introducción
 
-Las Máquinas de Soporte Vectorial (SVM) son modelos diseñados originalmente para
-**clasificación binaria**, es decir, para separar el espacio de datos en dos clases:
-$$
-y_i \in \{-1, +1\}.
-$$
+Las SVM (Support Vector Machines) son modelos de **clasificación supervisada** diseñados para encontrar la frontera que mejor separa dos clases en el espacio de características.
 
+::: {.callout-tip title="Idea central"}
+Una SVM busca un hiperplano que separa las clases con el **mayor margen posible**.  
+Los puntos que efectivamente determinan esa frontera se llaman **vectores de soporte**.
+:::
 
-La idea esencial es encontrar una **frontera óptima** que divida las dos clases y que
-maximice el **margen**, es decir, la distancia entre la frontera y las observaciones más cercanas.
+# Support Vector Machines
 
-::: {.callout-tip title="Idea principal"}
-Una SVM busca el hiperplano que mejor separa las clases, asegurando el mayor margen.
-Las observaciones que definen esa frontera se llaman **vectores de soporte**.
+En la figura se observa cómo una SVM separa dos clases mediante un hiperplano de margen máximo, definido únicamente por los puntos más cercanos a la frontera, llamados vectores de soporte.
+
+![](../Data/img/svm1.png)
+# Vectores de soporte
+
+Solo unos pocos puntos realmente importan para determinar
+la frontera óptima.
+
+::: {.callout-tip title="¿Quiénes importan?"}
+Los puntos *más cercanos* a la frontera son los que la
+definen. Esos son los **vectores de soporte**. 
+:::
+
+Estos son los únicos puntos que influyen en la frontera final.
+
+# ¿Y si no somos capaces de separar linealmente?
+
+Hay situaciones donde ninguna línea puede separar rectamente a las clases.
+
+::: {.callout-note title="Problema real"}
+Las SVM superan este problema transformando el espacio de características
+de modo que las clases sí sean separables allí.
 :::
 
 
-# SVM lineal: intuición geométrica
+# Hiperplanos: ¿qué son?
 
-Una SVM lineal busca un hiperplano de la forma:
+En un espacio de características:
+- un **hiperplano** es una frontera que divide dos clases.
+  
+Si $(p=2)$, es una **línea**.  
+Si $(p=3)$, es un **plano**.  
+Y para $(p=3)$,, es un plano en dimensiones superiores. 
 
-$$
-f(x) = w^\top x + b = 0.
-$$
-
-La regla de predicción es:
-
-$$
-\hat{y} = \text{sign}(w^\top x + b).
-$$
-
-# SVM lineal: intuición geométrica
-
-El margen geométrico es:
-
-$$
-\text{margen} = \frac{2}{\lVert w \rVert}.
-$$
-
-::: {.callout-tip title="Interpretación"}
-Maximizar el margen equivale a minimizar $$(\lVert w \rVert)$$,
-lo que da una frontera más estable y generalizable.
+::: {.callout-note title="Intuición geométrica"}
+Un hiperplano divide el espacio en dos regiones:  
+una para cada clase. No importa la dimensión, ¡la idea es la misma!
 :::
 
-# Formulación SVM lineal (caso separable)
 
-$$
-\min_{w, b} \quad \frac{1}{2} \lVert w \rVert^2
-$$
+# ¿Cuál hiperplano es “el mejor”?
 
-sujeto a:
+En muchas situaciones **hay infinitas maneras** de separar dos grupos.  
+Entonces la pregunta es:
 
-$$
-y_i (w^\top x_i + b) \ge 1,\quad i=1,\dots,n.
-$$
-
-- Asegura que cada observación quede del lado correcto.
-- Impone que esté fuera de la banda del margen.
-
-Los puntos que “tocan” la banda son los **vectores de soporte**.
-
-# Caso no separable: variables de holgura
-Cuando las clases no se pueden separar perfectamente, añadimos $$(\xi_i)$$:
-
-$$
-\min_{w,b,\xi} 
-\quad \frac{1}{2}\lVert w\rVert^2
-+ C \sum_{i=1}^n \xi_i
-$$
-
-sujeto a:
-
-$$
-y_i (w^\top x_i + b) \ge 1 - \xi_i,\qquad \xi_i \ge 0.
-$$
-
-# Caso no separable: variables de holgura
-
-::: {.callout-tip title="El parámetro C"}
-- **C grande** → penaliza mucho los errores → modelo rígido (riesgo de sobreajuste).  
-- **C pequeño** → permite más errores → modelo flexible con mejor generalización.
+::: {.callout-tip title="¿Cuál frontera elegir?"}
+De todas las posibles fronteras que separan las clases,
+¿cuál es la que mejor generaliza a datos nuevos? 
 :::
 
-# Versión dual y vectores de soporte
+La SVM responde:
 
-La SVM puede escribirse como:
-
-$$
-f(x) = \sum_{i=1}^n \alpha_i y_i \, x_i^\top x + b,
-$$
-
-donde los **vectores de soporte** son los que cumplen:
-
-$$
-\alpha_i > 0.
-$$
+> El que deja el **mayor espacio (o margen) posible** entre las clases. 
 
 
-# SVM con kernels
+# Margen óptimo
 
-Cuando las clases no pueden separarse linealmente, usamos **kernels**:
+El **margen** es la distancia entre la frontera y los
+puntos más cercanos de cada clase.
 
-$$
-K(x_i, x_j) = \phi(x_i)^\top \phi(x_j).
-$$
-
-La función de decisión se convierte en:
-
-$$
-f(x) = \sum_{i=1}^n \alpha_i y_i \, K(x_i, x) + b
-$$
-
-# SVM con kernels
-
-**Kernels comunes:**
-
-- Lineal  
-  $$
-  K(x_i,x_j)=x_i^\top x_j
-  $$
-
-- Polinómico  
- $$
-  (\gamma x_i^\top x_j + r)^d
- $$
-
-- Radial (RBF)  
- $$
-  K(x_i,x_j)=\exp(-\gamma\lVert x_i - x_j\rVert^2)
- $$
- 
- 
-# SVM con kernels
-
-**Kernels comunes:**
-
-::: {.callout-tip title="Kernel radial (RBF)"}
-El kernel más usado.  
-Permite fronteras curvas controladas por \(\gamma\).
+::: {.callout-tip title="Interpretación central"}
+Maximizar el margen produce fronteras más estables y generalizables.
 :::
 
+Dos conceptos clave:
+
+- **Márgenes grandes** → región clara entre clases  
+- **Márgenes pequeños** → modelo frágil  
+
+
+# ¿Por qué no basta separar bien?
+
+Imagina una frontera que clasifica perfecto en los datos que ves,
+pero está **muy cerca de los puntos**.
+
+::: {.callout-warning title="Sobreajuste sin margen"}
+Aunque la separación en los datos de entrenamiento sea perfecta,
+esa frontera podría fallar con nuevos datos.
+:::
+
+
+
+# El **kernel trick**
+
+El truco es usar funciones llamadas **kernels** para implicar el cálculo
+de productos internos en espacios transformados sin construirlos explícitamente. 
+
+Es decir:
+
+::: {.callout-tip title="Kernel trick"}
+En vez de encontrar una frontera compleja en el espacio original,
+buscamos una frontera **simple en un espacio transformado**.
+:::
+
+
+# Kernels comunes
+
+Estos son los más utilizados:
+
+- **Lineal**  
+  Mide similitud simple $(x_i^\top x_j)$.
+
+- **Polinómico**  
+  $((\gamma x_i^\top x_j + r)^d)$. 
+
+- **RBF / Radial**  
+  $(\exp(-\gamma\|x_i-x_j\|^2))$. 
+
+::: {.callout-tip title="Kernel RBF"}
+Este es el más usado porque permite fronteras **suaves y no lineales**  
+sin que el modelo se vuelva inestable.
+:::
 
 # Historia: El equipo que quería distinguir minas de rocas
 
@@ -221,7 +202,7 @@ X <- as.data.frame(scale(Sonar[, 1:60]))  # predictores estandarizados
 y <- Sonar$Class                          # clase: M / R
 
 datos <- cbind(X, Class = y)
-head(datos[, 1:8])
+round(head(datos[, 1:8]),3)
 
 
 ```

@@ -218,3 +218,15 @@ for (v in valores) {
 }
 ```
 
+# Resumen de la clase
+
+| **Tema**                   | **Conceptos clave**                       | **Resultado esperado**                      |
+| -------------------------- | ----------------------------------------- | ------------------------------------------- |
+| Programación en R          | Automatización y control del flujo        | Scripts más eficientes y reproducibles      |
+| Programación estructurada  | Secuencia, selección e iteración          | Código claro y organizado                   |
+| Condicionales              | `if`, `else`, `else if`                   | Toma de decisiones basada en condiciones    |
+| Bucles `while`             | Repetición mientras la condición sea TRUE | Ejecución controlada de procesos iterativos |
+| Bucles `for`               | Repetición sobre secuencias u objetos     | Recorrido de vectores y estructuras         |
+| Combinación de estructuras | `if` dentro de `for` o `while`            | Rutinas lógicas más complejas               |
+| Control de bucles          | `break` y `next`                          | Manejo fino del flujo de ejecución          |
+

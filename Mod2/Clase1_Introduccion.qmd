@@ -23,7 +23,7 @@ editor_options:
     wrap: 90
 ---
 
-## ¿Qué es el Tidyverse?
+# ¿Qué es el Tidyverse?
 
 El **Tidyverse** es una colección de paquetes de R diseñados para el trabajo con datos de forma coherente y eficiente.  
 Se centra en la idea de *datos ordenados* (*tidy data*), donde:
@@ -34,7 +34,7 @@ Se centra en la idea de *datos ordenados* (*tidy data*), donde:
 
 
 
-## Filosofía del Tidyverse
+# Filosofía del Tidyverse
 
 - Coherencia en la sintaxis y nombres de funciones  
 - Operaciones expresivas y legibles  
@@ -48,7 +48,7 @@ library(ggplot2)
 
 
 
-## Paquetes principales
+# Paquetes principales
 \small
 | Paquete     | Objetivo general | Funciones o ejemplos clave |
 |--------------|------------------|-----------------------------|
@@ -59,11 +59,11 @@ library(ggplot2)
 
 
 
-## Ecosistema Tidyverse
+# Ecosistema Tidyverse
 
 ![](img/01_tidyverse.png){fig-align="center" width=80%}
 
-## Paquetes del Ecosistema Tidyverse (I)
+# Paquetes del Ecosistema Tidyverse (I)
 
 A continuación, se describen los principales paquetes y su función dentro del ecosistema.
 
@@ -73,7 +73,7 @@ A continuación, se describen los principales paquetes y su función dentro del 
 | **haven**    | Importa y exporta datos de software estadístico como SPSS, Stata o SAS. | `read_sav()`, `read_dta()`, `write_sav()` |
 | **readxl**   | Importa datos desde hojas de cálculo de Excel (`.xls` y `.xlsx`). | `read_excel()`, `excel_sheets()` |
 
-## Paquetes del Ecosistema Tidyverse (II)
+# Paquetes del Ecosistema Tidyverse (II)
 \small
 
 | Paquete     | Objetivo general | Funciones o ejemplos clave |
@@ -84,7 +84,7 @@ A continuación, se describen los principales paquetes y su función dentro del 
 | **lubridate**| Simplifica el trabajo con fechas y horas, desde su creación hasta cálculos temporales. | `ymd()`, `dmy()`, `now()`, `interval()` |
 
 
-## Paquetes del Ecosistema Tidyverse (II)
+# Paquetes del Ecosistema Tidyverse (II)
 
 \small
 
@@ -96,7 +96,7 @@ A continuación, se describen los principales paquetes y su función dentro del 
 | **hms**      | Maneja datos de tiempo (horas, minutos, segundos) sin fechas. | `hms()`, `as_hms()` |
 | **rlang**    | Proporciona herramientas para programación avanzada y manipulación del lenguaje R. | `sym()`, `quo()`, `eval_tidy()` |
 
-## ¿Qué es un `data.frame` y qué es un `tibble`?
+# ¿Qué es un `data.frame` y qué es un `tibble`?
 
 - **`data.frame`**  
   Es la estructura de datos base de R para manejar tablas.  
@@ -106,7 +106,7 @@ A continuación, se describen los principales paquetes y su función dentro del 
 - **`tibble`**  
   Es una versión moderna de `data.frame`, desarrollada dentro del *tidyverse*.  
 
-## Data Frame vs. Tibble
+# Data Frame vs. Tibble
 
 \small
 
@@ -118,7 +118,7 @@ A continuación, se describen los principales paquetes y su función dentro del 
 | **Compatibilidad con el tidyverse** | Limitada: requiere coerción o conversión a tibble. | Totalmente integrada: se comporta de forma coherente con `dplyr`, `ggplot2`, etc. |
 
 
-## Instalación
+# Instalación
 
 ```r
 install.packages("tidyverse")
@@ -130,7 +130,7 @@ library(tidyverse)
 ```
 
 
-## Datos ordenados (*Tidy Data*)
+# Datos ordenados (*Tidy Data*)
 
 Ejemplo de datos *no ordenados*:
 
@@ -146,7 +146,7 @@ Forma *ordenada*:
 | 1  | 2024 | 700     |
 
 
-## Ventajas de trabajar con Tidyverse
+# Ventajas de trabajar con Tidyverse
 
 * Código más claro y reproducible
 
@@ -158,7 +158,7 @@ Forma *ordenada*:
 
 ---
 
-## Operador pipe `%>%`
+# Operador pipe `%>%`
 
 Permite encadenar funciones de manera secuencial:
 
@@ -174,7 +174,7 @@ Equivale a:
 summarise(filter(data, edad > 25), media = mean(ingreso))
 ```
 
-## Ejemplo básico
+# Ejemplo básico
 
 ```r
 library(dplyr)
@@ -185,7 +185,7 @@ mtcars %>%                  # Es una base de datos incluida en R
   summarise(media_hp = mean(hp)) # Resumen de la variable 
 ```
 
-## Uso de `glimpse()`
+# Uso de `glimpse()`
 
 Muestra la estructura compacta de un data frame:
 
@@ -194,16 +194,30 @@ dplyr::glimpse(mtcars)
 ```
 
 
-## Recursos recomendados
+# Recursos recomendados
 
 * [R for Data Science](https://r4ds.hadley.nz/)
 * [Cheat Sheet oficial del Tidyverse](https://posit.co/resources/cheatsheets/)
 * Documentación: `?dplyr`, `?tidyr`
 
 
-## Conclusión
+# Conclusión
 
 El **Tidyverse** es más que un conjunto de paquetes:
 es una forma de pensar el análisis de datos con coherencia, claridad y reproducibilidad.
 
 > “El código legible hoy es el análisis replicable mañana.” — Hadley Wickham
+
+# Resumen de la clase
+
+| **Tema**                 | **Conceptos clave**                                       | **Resultado esperado**                               |
+| ------------------------ | --------------------------------------------------------- | ---------------------------------------------------- |
+| Tidyverse                | Ecosistema de paquetes con sintaxis coherente             | Flujo de trabajo integrado para análisis de datos    |
+| Filosofía *tidy data*    | Variables en columnas, observaciones en filas             | Datos ordenados y fáciles de analizar                |
+| Paquetes principales     | `dplyr`, `ggplot2`, `readr`, `tidyr`                      | Manipulación, visualización e importación eficientes |
+| Ecosistema ampliado      | `purrr`, `stringr`, `forcats`, `lubridate`, `broom`, etc. | Cobertura completa del ciclo de análisis             |
+| `data.frame` vs `tibble` | Tibble como versión moderna y segura                      | Manejo más predecible de tablas                      |
+| Operador pipe `%>%`      | Encadenamiento de funciones                               | Código más legible y expresivo                       |
+| Exploración de datos     | `glimpse()`                                               | Comprensión rápida de la estructura                  |
+
+

@@ -126,6 +126,18 @@ head(datos_gbm, 5)
 
 ```
 
+# Separación en entrenamiento y prueba
+
+```{r include=TRUE, echo=TRUE}
+set.seed(123)
+n <- nrow(datos_gbm)
+id_train <- sample(seq_len(n), size = 0.7 * n)
+
+datos_train <- datos_gbm[id_train, ]
+datos_test  <- datos_gbm[-id_train, ]
+```
+
+
 # Ajuste de un GBM de regresión
 
 ```{r include=TRUE, echo=TRUE}
@@ -136,11 +148,12 @@ set.seed(123)
 
 modelo_gbm <- gbm(
   formula = mpg ~ hp + wt + cyl,
-  data = datos_gbm,
+  data = datos_train,
   distribution = "gaussian",   # REGRESIÓN
   n.trees = 1500,
   interaction.depth = 3,
   shrinkage = 0.01,
+  bag.fraction = 0.8,
   n.minobsinnode = 5
 )
 ```
@@ -156,12 +169,17 @@ summary(modelo_gbm)
 
 ::: {.callout-tip title="¿Qué encontró el jefe al revisar el summary del GBM?"}
 
-Al revisar el `summary(modelo_gbm)`, el jefe del laboratorio entendió **qué variables estaban impulsando realmente las predicciones del consumo**.  
-Descubrió que:
+Al revisar el `summary(modelo_gbm)`, el jefe del laboratorio identificó con claridad
+qué variables impulsaban las predicciones del consumo de combustible:
 
-- **hp (caballos de fuerza)** era la variable más influyente: motores más potentes tienden a consumir más combustible.  
-- **wt (peso del auto)** aportaba casi la misma importancia que `hp`, mostrando que los vehículos más pesados requieren mayor energía para moverse.  
-- **cyl (cilindros)** también influía, aunque en menor medida, pues parte de su efecto ya se reflejaba en la potencia y el peso.
+- **wt (peso del auto)** fue la variable más influyente.
+  Los vehículos más pesados requieren más energía para moverse, lo que reduce el rendimiento en millas por galón.
+
+- **hp (caballos de fuerza)** ocupó el segundo lugar en importancia.
+  Motores más potentes tienden a consumir más combustible.
+
+- **cyl (número de cilindros)** también influyó, aunque en menor medida,
+  ya que parte de su efecto se refleja indirectamente en el peso y la potencia del vehículo.
 :::
 
 # Evaluación del modelo GBM
@@ -177,14 +195,14 @@ Para ello decidió calcular las **predicciones del modelo** y medir el **error**
 
 ```{r include=TRUE, echo=TRUE}
 
-datos_gbm <- datos_gbm %>%
-mutate(
-mpg_pred = predict(modelo_gbm, n.trees = 1500)
-)
+datos_test <- datos_test %>%
+  mutate(
+    mpg_pred = predict(modelo_gbm, newdata = ., n.trees = 1500)
+  )
 
-datos_gbm %>%
-dplyr::select(mpg, mpg_pred) %>%
-head(5)
+datos_test %>%
+  select(mpg, mpg_pred) %>%
+  head(5)
 
 ```
 # Predicciones del modelo sobre los mismos datos
@@ -201,25 +219,26 @@ Si el modelo fuera perfecto, estos dos valores serían casi iguales para todos l
 
 library(ggplot2)
 
-graf1 <- ggplot(datos_gbm, aes(x = mpg, y = mpg_pred)) +
-geom_point() +
-geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-labs(
-x = "Consumo real (mpg)",
-y = "Consumo predicho por el GBM",
-title = "Consumo real vs. predicho"
-)
+graf1 <- ggplot(datos_test, aes(x = mpg, y = mpg_pred)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  labs(
+    x = "Consumo real (mpg) – prueba",
+    y = "Consumo predicho por el GBM",
+    title = "GBM: Consumo real vs. predicho"
+  )
 
 graf1
 
 ```
-El jefe observó que la mayoría de puntos se ubicaban cerca de la diagonal, por lo que concluyó que el GBM **capturaba bien el patrón de consumo** en función del peso, los caballos de fuerza y los cilindros.
+El jefe observó que la mayoría de los puntos se ubicaban cerca de la diagonal,
+lo que indicaba que el GBM predice razonablemente bien el consumo de autos no vistos.
 
 # Métricas de error: RMSE y MAE
 
 ```{r include=TRUE, echo=TRUE}
-rmse <- sqrt(mean((datos_gbm$mpg - datos_gbm$mpg_pred)^2))
-mae <- mean(abs(datos_gbm$mpg - datos_gbm$mpg_pred))
+rmse <- sqrt(mean((datos_test$mpg - datos_test$mpg_pred)^2))
+mae  <- mean(abs(datos_test$mpg - datos_test$mpg_pred))
 
 c(RMSE = rmse, MAE = mae)
 ```
@@ -245,8 +264,7 @@ Cuanto **más pequeños** sean RMSE y MAE, **mejor está ajustando** el GBM al c
 
 ::: {.callout-note title="GBM para clasificación"}
 
-Si Y no fuera continua (como `mpg`) sino **categórica** —por ejemplo, *bajo consumo / alto consumo*—  
-el modelo tendría que cambiar a un **GBM de clasificación**.
+Si Y no fuera continua (como `mpg`) sino **categórica** el modelo tendría que cambiar a un **GBM de clasificación**.
 
 **¿Qué cambiaría?**
 

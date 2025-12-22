@@ -55,9 +55,13 @@ library(printr)
 ```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
 datos <- readRDS("data/base_personas_gasto.rds")
 library(dplyr)
-glimpse(datos)
+
 ```
 
+\tiny
+```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+glimpse(datos)
+```
 # `select()`
 
 ## ¿Para qué sirve?
@@ -222,7 +226,7 @@ filter(datos, between(edad, 1, 10))
 ```
 ---
 
-# En resumen
+# Resumen de la clase
 
 | Función    | Actúa sobre | Objetivo principal                    | Ejemplo                    |
 | ---------- | ----------- | ------------------------------------- | -------------------------- |
