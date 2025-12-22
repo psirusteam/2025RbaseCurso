@@ -243,3 +243,15 @@ theme_minimal(base_size = 13)
 
 ej2 
 ```
+
+# Resumen de la clase
+
+| **Concepto**           | **Idea clave**                                     |
+| ---------------------- | -------------------------------------------------- |
+| Gráfico de dispersión  | Explora la relación entre dos variables numéricas  |
+| `geom_point()`         | Geometría básica para dispersión                   |
+| Asociación             | Permite evaluar tendencia, forma y dispersión      |
+| Estética visual        | Color, tamaño y `alpha` ayudan a distinguir grupos |
+| Sobreposición          | Transparencia reduce el solapamiento de puntos     |
+| Tendencia              | `geom_smooth()` añade líneas LOESS o lineales      |
+| Construcción por capas | Elementos se agregan con `+`                       |

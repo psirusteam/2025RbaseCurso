@@ -29,7 +29,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(printr)
 ```
 
-# **Introducción**
+# Introducción
 
 En las clases anteriores trabajamos la inferencia para medias y la diferencia de medias
 entre grupos. En esta clase nos centraremos en variables categóricas/binarias, donde el
@@ -43,7 +43,7 @@ Ejemplos típicos:
 
 -   Proporción de hogares con acceso a internet.
 
-# **Introducción**
+# Introducción
 
 ::: callout-note
 Objetivos de esta clase:
@@ -55,7 +55,7 @@ Objetivos de esta clase:
 -   Formular y aplicar pruebas de hipótesis para una proporción.
 :::
 
-# **Base de datos y muestra**
+# Base de datos y muestra
 
 Usaremos nuevamente la base base_personas_gasto.rds, y construiremos una variable binaria
 que indique si el hogar tiene ingreso bajo.
@@ -70,7 +70,7 @@ muestra <- slice_sample(datos, n = 400)
 head(muestra[, 2:8],5)
 ```
 
-# **Base de datos y muestra**
+# Base de datos y muestra
 
 ```{r echo=TRUE}
 
@@ -84,7 +84,7 @@ ingreso_bajo = if_else(ingreso_hh < mediana_ingreso, 1, 0)
 head(muestra[, c("ingreso_hh", "ingreso_bajo", "sexo")], 5)
 ```
 
-# **Base de datos y muestra**
+# Base de datos y muestra
 
 ::: callout-note
 Interpretación de ingreso_bajo:
@@ -94,7 +94,7 @@ Interpretación de ingreso_bajo:
 0 = hogar con ingreso igual o superior a la mediana.
 :::
 
-# **Proporción poblacional y estimador**
+# Proporción poblacional y estimador
 
 Sea $Y$ una variable binaria:
 
@@ -110,7 +110,7 @@ En una muestra de tamaño $n$, el estimador natural de $p$ es la proporción mue
 
 $$\hat{p} = \frac{1}{n} \sum_{i=1}^{n} Y_i$$
 
-# **Proporción muestral en el ejemplo**
+# Proporción muestral en el ejemplo
 
 Calculamos la proporción de hogares con ingreso bajo en nuestra muestra:
 
@@ -130,7 +130,7 @@ c(n = n, exitos = x, proporcion_muestral = p_hat)
 $\hat{p}$ es el porcentaje de hogares con ingreso bajo en la muestra y se usa como estimador de la proporción poblacional $p$.
 :::
 
-# **Error estándar de la proporción**
+# Error estándar de la proporción
 
 Bajo muestreo aleatorio simple y muestras grandes, el estimador $\hat{p}$ tiene:
 
@@ -142,7 +142,7 @@ Usando la muestra, el error estándar se estima reemplazando $p$ por $\hat{p}$:
 
 $$\widehat{SE}(\hat{p}) = \sqrt{\frac{\hat{p}(1 - \hat{p})}{n}}$$
 
-# **Error estándar de la proporción**
+# Error estándar de la proporción
 
 ```{r echo=TRUE}
 
@@ -160,7 +160,7 @@ $$\hat{p} \pm z_{0.975} \cdot \widehat{SE}(\hat{p})$$
 donde $z_{0.975} \approx 1.96$.
 
 
-# **Intervalo de confianza para una proporción**
+# Intervalo de confianza para una proporción
 
 ```{r echo=TRUE}
 
@@ -179,7 +179,7 @@ ic_95_p
 “Con un 95% de confianza, la proporción poblacional de hogares con ingreso bajo se encuentra entre los límites del intervalo calculado.”
 :::
 
-# **Prueba de hipótesis para una proporción**
+# Prueba de hipótesis para una proporción
 
 Supongamos que se plantea la siguiente hipótesis sobre la proporción de hogares con ingreso bajo:
 
@@ -192,7 +192,7 @@ $$
 
 Donde $p = 0.40$ representa un valor de referencia de interés (por ejemplo, el valor esperado según una política o un dato histórico).
 
-# **Prueba de hipótesis para una proporción# Prueba de hipótesis para una proporción**
+# Prueba de hipótesis para una proporción# Prueba de hipótesis para una proporción
 
 :::{.callout-important}
 Si la proporción observada $\hat{p}$ está “muy lejos” de 0.40 (según su error estándar), se rechaza $H_0$.
@@ -200,7 +200,7 @@ Si la proporción observada $\hat{p}$ está “muy lejos” de 0.40 (según su e
 Si no, no hay evidencia suficiente para rechazar $H_0$.
 :::
 
-# **Prueba de hipótesis para una proporción en R**
+# Prueba de hipótesis para una proporción en R
 
 Podemos usar prop.test() para realizar la prueba:
 
@@ -213,13 +213,13 @@ prop.test(x = x, n = n,p = 0.40,
 
 ```
 
-# **Prueba de hipótesis para una proporción en R**
+# Prueba de hipótesis para una proporción en R
 
 :::{.callout-note title="Pregunta"}
 Con base en el valor-p, ¿se debe **rechazar** o **no rechazar** la hipótesis nula $H_0$?
 :::
 
-# Conclusiones de la clase
+# Resumen de la clase
 
 | Tema                                | Idea principal                                         | Herramienta en R                |
 | ----------------------------------- | ------------------------------------------------------ | ------------------------------- |
@@ -228,8 +228,7 @@ Con base en el valor-p, ¿se debe **rechazar** o **no rechazar** la hipótesis n
 | IC para una proporción              | $\hat{p} \pm z \cdot \sqrt{\hat{p}(1-\hat{p})/n}$      |     |
 | Prueba para una proporción          | Contraste $H_0: p = p_0$ vs $H_1$ alternativa          | `prop.test(x, n, p = p0)`       |
 
-# Conclusiones de la clase
-
+# Resumen de la clase
 
 :::{.callout-note title="En resumen"}
 

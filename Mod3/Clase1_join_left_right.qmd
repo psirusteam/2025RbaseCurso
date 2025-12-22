@@ -71,9 +71,14 @@ Cada observación se combina según una **clave** o conjunto de claves compartid
 ```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
 datos <- readRDS("data/base_personas_gasto.rds")
 library(dplyr)
-glimpse(datos)
+
 ```
 
+\tiny
+
+```{r echo=TRUE, warning=FALSE, error=FALSE, message=FALSE}
+glimpse(datos)
+```
 # Variables principales:
 
 * `id_hogar`, `id_pers`: identificadores.
@@ -177,13 +182,12 @@ datos_left  %>% head(6)
 | NA posibles       | En variables del hogar | En variables de persona |
 
 
-# Conclusiones de la sección
+# Resumen de la clase 
 
-* `left_join()` es ideal cuando se desea conservar el universo principal (por ejemplo, personas).
-
-* `right_join()` resulta útil al priorizar la información del hogar o marco maestro.
-* Ambos son **simétricos** si se invierte el orden de los data frames.
-
+| **Concepto**   | **Idea clave**                                         |
+| -------------- | ------------------------------------------------------ |
+| `left_join()`  | Conserva el universo principal (por ejemplo, personas) |
+| `right_join()` | Prioriza el marco maestro (por ejemplo, hogares)       |
 
 
 # Próxima sección

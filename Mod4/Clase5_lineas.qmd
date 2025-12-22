@@ -144,5 +144,13 @@ theme_minimal(base_size = 13)
 linea_ing_3
 ```
 
-# Ejemplo 1. Comparar dos series: ingreso y gasto promedio por año
+# Resumen de la clase
 
+| **Concepto**      | **Idea clave**                                                               |
+| ----------------- | ---------------------------------------------------------------------------- |
+| Gráfico de líneas | Muestra evolución en el tiempo u orden lógico                                |
+| Preparación       | Agregar/ordenar datos por periodo (`group_by()`, `summarise()`, `arrange()`) |
+| `geom_line()`     | Geometría principal para series                                              |
+| Puntos de apoyo   | `geom_point()` ayuda a ver observaciones específicas                         |
+| Comparación       | Permite contrastar tendencias entre grupos (color/facetas)                   |
+| Buenas prácticas  | Usar X con orden; NA puede cortar la línea                                   |

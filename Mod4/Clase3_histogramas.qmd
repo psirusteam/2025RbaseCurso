@@ -223,4 +223,16 @@ ejem_ing_2
 ```
 
 
+# Resumen de la clase
+
+| **Concepto**             | **Idea clave**                                             |
+| ------------------------ | ---------------------------------------------------------- |
+| Histograma               | Visualiza la distribución de variables numéricas continuas |
+| `geom_histogram()`       | Geometría principal para histogramas                       |
+| Bins                     | Intervalos que controlan la resolución del gráfico         |
+| Forma de la distribución | Permite identificar sesgo, concentración y colas           |
+| Densidad                 | Alternativa a conteos (`after_stat(density)`)              |
+| Comparación por grupos   | Uso de `fill`, `alpha` o facetas                           |
+| Capas                    | Títulos, temas y curvas se agregan con `+`                 |
+
 

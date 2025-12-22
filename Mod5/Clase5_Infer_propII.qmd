@@ -29,13 +29,13 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(printr)
 ```
 
-# **Introducción**
+# Introducción
 
 En la Clase 4 revisamos la inferencia para una proporción poblacional.
 En esta clase profundizaremos en la comparación entre dos proporciones provenientes de dos grupos independientes.
 
 
-# **Introducción**
+# Introducción
 
 :::{.callout-note title="Objetivos de esta clase"}
 
@@ -46,7 +46,7 @@ En esta clase profundizaremos en la comparación entre dos proporciones provenie
 - Formular y evaluar hipótesis para comparar dos proporciones.
 :::
 
-# **Estimador para dos proporciones**
+# Estimador para dos proporciones
 
 Sea  $Y_1$ una variable binaria en el Grupo 1 y $Y_2$ en el Grupo 2. 
 
@@ -62,13 +62,13 @@ El estimador de la diferencia es:
 
 $$\widehat{p_1 - p_2} = \hat{p}_1 - \hat{p}_2$$
 
-# **Error estándar de la diferencia**
+# Error estándar de la diferencia
 
 Para muestras grandes, el error estándar se estima como:
 
 $$SE(\hat{p}_1 - \hat{p}_2) = \sqrt{\frac{\hat{p}_1(1 - \hat{p}_1)}{n_1} + \frac{\hat{p}_2(1 - \hat{p}_2)}{n_2}}$$
 
-# **Base de datos y muestra**
+# Base de datos y muestra
 
 ```{r echo=TRUE}
 library(tidyverse)
@@ -81,7 +81,7 @@ head(muestra[, 2:8],5)
 ```
 
 
-# **Base de datos y muestra**
+# Base de datos y muestra
 
 ```{r echo=TRUE}
 muestra <- muestra %>%
@@ -91,7 +91,7 @@ ingreso_bajo = if_else(ingreso_hh < mediana_ingreso, 1, 0)
 )
 ```
 
-# **Comparación por sexo**
+# Comparación por sexo
 
 ```{r echo=TRUE}
 tabla <- muestra %>%
@@ -107,7 +107,7 @@ tabla
 ```
 
 
-# **Intervalo de confianza para $p_1 - $p_2**
+# Intervalo de confianza para $p_1 - $p_2
 
 ```{r echo=TRUE}
 p1 <- tabla$p[1]; n1 <- tabla$n[1]
@@ -123,7 +123,7 @@ ic
 ```
 
 
-# **Intervalo de confianza para $p_1 - $p_2**
+# Intervalo de confianza para $p_1 - $p_2
 
 :::{.callout-tip title="Interpretación"}
 
@@ -165,7 +165,7 @@ Si el valor-p < 0.05 → evidencia de diferencia significativa entre proporcione
 Si el valor-p ≥ 0.05 → no hay evidencia suficiente para afirmar una diferencia.
 :::
 
-# Conclusiones de la clase
+# Resumen de la clase
 
 | Tema                                | Idea principal                          | Herramienta                     |
 | ----------------------------------- | --------------------------------------- | ------------------------------- |

@@ -264,5 +264,14 @@ datos %>%
 
 * Clave para análisis reproducibles y modulares.
 
+# Resumen de la clase
+
+| **Concepto**   | **Idea clave**                          |
+| -------------- | --------------------------------------- |
+| `purrr`        | Programación funcional en R             |
+| `map()`        | Reemplaza bucles para aplicar funciones |
+| `map_*()`      | Salidas con tipo predecible             |
+| Integración    | Funciona con `mutate()` y `%>%`         |
+
 
 

@@ -189,3 +189,15 @@ ggplot(data = ...) +
   theme_...()
 ```
 
+# Resumen de la clase
+
+| **Concepto**              | **Idea clave**                                   |
+| ------------------------- | ------------------------------------------------ |
+| Gramática de los Gráficos | Marco teórico para construir visualizaciones     |
+| `ggplot2`                 | Paquete del tidyverse para gráficos declarativos |
+| Datos                     | Punto de partida: tablas ordenadas               |
+| Estética (`aes`)          | Mapea variables a atributos visuales             |
+| Geometrías (`geom_*`)     | Define el tipo de gráfico                        |
+| Capas (`+`)               | Los gráficos se construyen sumando componentes   |
+| Facetas y escalas         | Comparación de grupos y control visual           |
+| Tema (`theme`)            | Apariencia sin alterar los datos                 |

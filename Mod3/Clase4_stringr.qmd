@@ -149,6 +149,7 @@ Se homogeneizan minúsculas, ideal antes de agrupar o unir tablas.
 
 # Ejemplo 6. Separar y unir texto
 
+\small
 ```{r}
 datos <- datos %>%
   mutate(id_hogar_txt = str_c("hh_", id_hogar))
@@ -162,6 +163,8 @@ str_split("A_B_C", "_")
 ---
 
 ## Ejemplo 7. Aplicación con `mutate()` y condiciones
+
+\small
 
 ```{r}
 datos <- datos %>%

@@ -200,7 +200,7 @@ graf2
 
 ```
 
-# Conclusiones de la clase
+# Resumen de la clase
 
 | Concepto                             | Aplicación en esta clase                       |
 | ------------------------------------ | ---------------------------------------------- |

@@ -206,13 +206,16 @@ Si $p < 0.05$, existe evidencia de cambio significativo entre el gasto antes y d
 Si $p > 0.05$, no hay evidencia de cambio.
 :::
 
-# Conclusiones de la clase
+# Resumen de la clase
 
 | Tipo de prueba                    | Escenario                                  | Hipótesis nula  | Función en R                           | Interpretación                                |
 | --------------------------------- | ------------------------------------------ | --------------- | -------------------------------------- | --------------------------------------------- |
 | **t de Student (independientes)** | Dos grupos distintos con varianzas iguales | $\mu_1 = \mu_2$ | `t.test(y ~ grupo, var.equal = TRUE)`  | Compara dos medias bajo igualdad de varianzas |
 | **t pareada**                     | Dos mediciones del mismo grupo             | $\mu_d = 0$     | `t.test(x1, x2, paired = TRUE)`        | Evalúa cambios antes y después                |
-# Conclusiones de la clase
+
+
+# Resumen de la clase
+
 
 
 :::{.callout-tip}

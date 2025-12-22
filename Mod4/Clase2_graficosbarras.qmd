@@ -260,3 +260,12 @@ theme_minimal(base_size = 13)
 ejem3
 ```
 
+# Resumen de la clase
+
+| **Concepto**     | **Idea clave**                                   |
+| ---------------- | ------------------------------------------------ |
+| `geom_bar()`     | Crea gráficos de barras a partir de conteos      |
+| `fill`           | Controla el color del relleno (por grupo o fijo) |
+| Barras agrupadas | Comparan subgrupos (posición = "dodge")          |
+| Barras apiladas  | Muestran composición (posición = "stack")        |
+| Barras 100%      | Comparan proporciones (posición = "fill")        |

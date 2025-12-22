@@ -48,6 +48,7 @@ El paquete **dplyr**, dentro del ecosistema **tidyverse**, ofrece una familia de
 library(dplyr)
 datos <- readRDS("data/base_personas_gasto.rds")
 ```
+
 ## *División de la base original*
 
 * `datos_hogar`: información a nivel de hogar.
@@ -59,6 +60,8 @@ datos_hogar <- datos %>%
   distinct() %>% 
   sample_frac(size = .5)
 ```
+
+# Base de ejemplo
 
 * `datos_persona`: información individual.
 
