@@ -1,6 +1,6 @@
 ---
-title: "Módulo 2 — Tidyverse I"
-subtitle: "group_by() y summarise()"
+title: "Fundamentos de ciencia de datos con R - Módulo 2"
+subtitle: "Clase 5: group_by() y summarise()"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

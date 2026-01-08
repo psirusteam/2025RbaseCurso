@@ -1,6 +1,6 @@
 ---
-title: "Módulo 3 — Tidyverse II"
-subtitle: "Expresiones regulares y manipulación de texto en R"
+title: "Fundamentos de ciencia de datos con R - Módulo 3"
+subtitle: "Clase 4: Expresiones regulares y manipulación de texto en R"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

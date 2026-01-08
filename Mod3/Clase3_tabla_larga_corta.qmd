@@ -1,6 +1,6 @@
 ---
-title: "Módulo 3 — Tidyverse II"
-subtitle: "`pivot_longer() y pivot_wider()`"
+title: "Fundamentos de ciencia de datos con R - Módulo 3"
+subtitle: "Clase 3: `pivot_longer() y pivot_wider()`"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

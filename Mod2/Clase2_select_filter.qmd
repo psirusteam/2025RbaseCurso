@@ -1,6 +1,6 @@
 ---
-title: "Módulo 2 — Tidyverse I"
-subtitle: "select() y filter()"
+title: "Fundamentos de ciencia de datos con R - Módulo 2"
+subtitle: "Clase 2: select() y filter()"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

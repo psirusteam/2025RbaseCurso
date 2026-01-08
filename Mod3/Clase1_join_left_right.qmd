@@ -1,6 +1,6 @@
 ---
-title: "Módulo 3 — Tidyverse II"
-subtitle: "Joins (Left y Right)"
+title: "Fundamentos de ciencia de datos con R - Módulo 3"
+subtitle: "Clase 1: Joins (Left y Right)"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

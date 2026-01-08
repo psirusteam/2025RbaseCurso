@@ -1,6 +1,6 @@
 ---
-title: "Módulo 3 — Tidyverse II"
-subtitle: "Uso de las funciones más comunes del paquete `purrr`"
+title: "Fundamentos de ciencia de datos con R - Módulo 3"
+subtitle: "Clase 5: Uso de las funciones más comunes del paquete `purrr`"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

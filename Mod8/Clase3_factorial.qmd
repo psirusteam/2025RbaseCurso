@@ -235,6 +235,12 @@ nfactors = 6,
 fm       = "ml",
 rotate   = "oblimin")
 
+
+```
+
+\tiny
+
+```{r include=TRUE, echo=TRUE,  fig.height=5, out.width='80%'}
 head(fa_bfi,5)
 
 ```

@@ -1,6 +1,6 @@
 ---
-title: "Módulo 2 — Tidyverse I"
-subtitle: "ifelse() y case_when()"
+title: "Fundamentos de ciencia de datos con R - Módulo 2"
+subtitle: "Clase 4: ifelse() y case_when()"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

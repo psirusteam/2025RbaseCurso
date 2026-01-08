@@ -1,6 +1,6 @@
 ---
-title: "Módulo 2 — Tidyverse I"
-subtitle: "Introducción al Tidyverse"
+title: "Fundamentos de ciencia de datos con R - Módulo 2"
+subtitle: "Clase 1: Introducción al Tidyverse"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 

@@ -1,6 +1,6 @@
 ---
-title: "Módulo 2 — Tidyverse I"
-subtitle: "mutate() y transmute()"
+title: "Fundamentos de ciencia de datos con R - Módulo 2"
+subtitle: "Clase 3: mutate() y transmute()"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 
@@ -213,35 +213,6 @@ Muy útil en modelos no lineales o para capturar efectos de curvatura.
 datos_mut3 %>% head(10)
 ```
 
-
-# Redondear y categorizar numéricamente sin condicionales
-
-```{r}
-datos_mut6 <- datos %>%
-  mutate(
-    across(
-      c(ingreso, gasto),
-      list(redondeado = ~ round(.x)),
-      .names = "{.fn}_{.col}" ),
-    across(
-      c(ingreso, gasto),
-      list(
-        clasificado = ~ cut(
-          .x,
-          breaks = quantile(.x, probs = seq(0, 1, 0.25), na.rm = TRUE),
-          include.lowest = TRUE,
-          labels = c("Q1 (Bajo)", "Q2", "Q3", "Q4 (Alto)")
-        )
-      ), .names = "{.fn}_{.col}"
-    )  )  %>% select(gasto, ingreso, matches("redondeado|clasificado")) 
-
-```
-
-# Resultados 
-\small
-```{r}
-datos_mut6 %>% head(10)
-```
 
 
 # Comparación resumida

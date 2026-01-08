@@ -1,6 +1,6 @@
 ---
-title: "Módulo 3 — Tidyverse II"
-subtitle: "Joins (full, inner, semi y anti)"
+title: "Fundamentos de ciencia de datos con R - Módulo 3"
+subtitle: "Clase 2: Joins (full, inner, semi y anti)"
 author: "CEPAL - Unidad de Estadísticas Sociales"
 date: "`r Sys.Date()`"
 format: 
